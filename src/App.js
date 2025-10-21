@@ -1,6 +1,10 @@
+import MainLayout from "./components/MainLayout";
+
 function App() {
     return (
-        <div>FER202 - Practical Exam given</div>
+        <div>
+            <MainLayout/>
+        </div>
     )
 }
 
