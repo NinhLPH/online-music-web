@@ -1,0 +1,140 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "user1",
+      "password": "user1",
+      "avatar": "https://picsum.photos/seed/user1/100/100",
+      "favorites": [101, 202]
+    },
+    {
+      "id": 2,
+      "username": "user2",
+      "password": "user2",
+      "avatar": "https://picsum.photos/seed/user2/100/100",
+      "favorites": [102]
+    }
+  ],
+  "artists": [
+    {
+      "id": 1,
+      "name": "Sơn Tùng M-TP",
+      "coverImg": "/assets/artists/son-tung-mtp.jpg"
+    },
+    {
+      "id": 2,
+      "name": "Taylor Swift",
+      "coverImg": "/assets/artists/taylor-swift.jpg"
+    },
+    {
+      "id": 3,
+      "name": "Lofi Girl",
+      "coverImg": "/assets/artists/lofi-girl.jpg"
+    }
+  ],
+  "albums": [
+    {
+      "id": 10,
+      "title": "Chúng Ta (Single)",
+      "artistId": 1,
+      "coverImg": "https://picsum.photos/seed/album10/300/300",
+      "releaseYear": 2020
+    },
+    {
+      "id": 20,
+      "title": "Midnights",
+      "artistId": 2,
+      "coverImg": "https://picsum.photos/seed/album20/300/300",
+      "releaseYear": 2022
+    },
+    {
+      "id": 30,
+      "title": "Chillhop Dreams",
+      "artistId": 3,
+      "coverImg": "https://picsum.photos/seed/album30/300/300",
+      "releaseYear": 2023
+    }
+  ],
+  "songs": [
+    {
+      "id": 101,
+      "title": "Chúng Ta Của Hiện Tại",
+      "artistId": 1,
+      "albumId": 10,
+      "duration": 305,
+      "genre": "V-Pop",
+      "src": "/assets/songs/chung-ta-cua-hien-tai.mp3"
+    },
+    {
+      "id": 102,
+      "title": "Muộn Rồi Mà Sao Còn",
+      "artistId": 1,
+      "albumId": 10,
+      "duration": 279,
+      "genre": "V-Pop",
+      "src": "/assets/songs/muon-roi-ma-sao-con.mp3"
+    },
+    {
+      "id": 201,
+      "title": "Anti-Hero",
+      "artistId": 2,
+      "albumId": 20,
+      "duration": 200,
+      "genre": "Pop",
+      "src": "/assets/songs/Anti-Hero.mp3"
+    },
+    {
+      "id": 202,
+      "title": "Lavender Haze",
+      "artistId": 2,
+      "albumId": 20,
+      "duration": 198,
+      "genre": "Pop",
+      "src": "/assets/songs/Lavender-Haze.mp3"
+    },
+    {
+      "id": 301,
+      "title": "Midnight Stroll",
+      "artistId": 3,
+      "albumId": 30,
+      "duration": 185,
+      "genre": "Lofi",
+      "src": "/assets/songs/Midnight-Stroll.mp3"
+    },
+    {
+      "id": 302,
+      "title": "Coffee Shop Vibes",
+      "artistId": 3,
+      "albumId": 30,
+      "duration": 210,
+      "genre": "Lofi",
+      "src": "/assets/songs/Coffee-Shop-Vibes.mp3"
+    }
+  ],
+  "playlists": [
+    {
+      "id": 1,
+      "name": "V-Pop Yêu Thích",
+      "userId": 1,
+      "description": "Những bài V-Pop hay nhất của Sơn Tùng.",
+      "coverImg": "https://picsum.photos/seed/playlist1/300/300",
+      "songIds": [101, 102]
+    },
+    {
+      "id": 2,
+      "name": "US-UK Hits",
+      "userId": 1,
+      "description": "Top hits US-UK.",
+      "coverImg": "https://picsum.photos/seed/playlist2/300/300",
+      "songIds": [202]
+    },
+    {
+      "id": 3,
+      "name": "Lofi Coding Session",
+      "userId": 2,
+      "description": "Nhạc chill để code.",
+      "coverImg": "https://picsum.photos/seed/playlist3/300/300",
+      "songIds": [301, 302, 201]
+    }
+  ]
+}
