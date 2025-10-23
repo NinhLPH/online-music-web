@@ -5,14 +5,18 @@
       "username": "user1",
       "password": "user1",
       "avatar": "https://picsum.photos/seed/user1/100/100",
-      "favorites": [101, 202]
+      "favorites": [
+        202
+      ]
     },
     {
       "id": 2,
       "username": "user2",
       "password": "user2",
       "avatar": "https://picsum.photos/seed/user2/100/100",
-      "favorites": [102]
+      "favorites": [
+        102
+      ]
     }
   ],
   "artists": [
@@ -118,7 +122,10 @@
       "userId": 1,
       "description": "Những bài V-Pop hay nhất của Sơn Tùng.",
       "coverImg": "https://picsum.photos/seed/playlist1/300/300",
-      "songIds": [101, 102]
+      "songIds": [
+        101,
+        102
+      ]
     },
     {
       "id": 2,
@@ -126,7 +133,9 @@
       "userId": 1,
       "description": "Top hits US-UK.",
       "coverImg": "https://picsum.photos/seed/playlist2/300/300",
-      "songIds": [202]
+      "songIds": [
+        202
+      ]
     },
     {
       "id": 3,
@@ -134,7 +143,11 @@
       "userId": 2,
       "description": "Nhạc chill để code.",
       "coverImg": "https://picsum.photos/seed/playlist3/300/300",
-      "songIds": [301, 302, 201]
+      "songIds": [
+        301,
+        302,
+        201
+      ]
     }
   ]
 }
