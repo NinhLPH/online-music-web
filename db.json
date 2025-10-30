@@ -6,7 +6,9 @@
       "password": "user1",
       "avatar": "https://picsum.photos/seed/user1/100/100",
       "favorites": [
-        202
+        202,
+        302,
+        201
       ]
     },
     {
@@ -123,8 +125,8 @@
       "description": "Những bài V-Pop hay nhất của Sơn Tùng.",
       "coverImg": "https://picsum.photos/seed/playlist1/300/300",
       "songIds": [
-        101,
-        102
+        102,
+        101
       ]
     },
     {

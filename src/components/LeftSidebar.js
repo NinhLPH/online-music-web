@@ -47,9 +47,8 @@ export default function LeftSidebar({ onSelectPlaylist }) {
         {playlists.map((playlist) => (
           <div
             key={playlist.id}
-            className={`d-flex align-items-center mb-3 sidebar-item ${
-              active === playlist.id ? "bg-secondary" : ""
-            }`}
+            className={`d-flex align-items-center mb-3 sidebar-item ${active === playlist.id ? "bg-secondary" : ""
+              }`}
             style={{ borderRadius: "8px", cursor: "pointer", padding: "6px" }}
             onClick={() => handleClick(playlist)}
           >
