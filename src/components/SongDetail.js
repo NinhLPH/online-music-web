@@ -1,7 +1,7 @@
-// src/components/SongDetail.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { FaHeart, FaPlus, FaPlay, FaTimes } from "react-icons/fa";
+import { FaHeart, FaPlus, FaTimes } from "react-icons/fa";
+import PlayPauseButton from "./PlayPauseButton"; // ✅ Thêm dòng này
 
 function SongDetail({ song, onClose }) {
     const [artist, setArtist] = useState(null);
@@ -11,7 +11,6 @@ function SongDetail({ song, onClose }) {
     useEffect(() => {
         if (!song) return;
 
-        // Lấy thông tin nghệ sĩ & album
         const fetchData = async () => {
             try {
                 const [artistRes, albumRes, userRes] = await Promise.all([
@@ -112,21 +111,20 @@ function SongDetail({ song, onClose }) {
                     </h4>
 
                     <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-                        <button
+                        {/* ✅ Thay nút phát bằng PlayPauseButton */}
+                        <div
                             style={{
                                 background: "#1db954",
-                                color: "#fff",
-                                border: "none",
                                 borderRadius: "50%",
                                 width: 56,
                                 height: 56,
-                                fontSize: 22,
-                                cursor: "pointer",
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
                             }}
-                            title="Phát bài hát"
                         >
-                            <FaPlay />
-                        </button>
+                            <PlayPauseButton song={song} />
+                        </div>
 
                         <button
                             onClick={toggleFavorite}

@@ -5,32 +5,23 @@ const QueueContext = createContext();
 
 export const QueueProvider = ({ children }) => {
     const [isQueueVisible, setIsQueueVisible] = useState(false);
-    const [allSongs, setAllSongs] = useState([]); // toàn bộ danh sách từ DB
+    const [allSongs, setAllSongs] = useState([]);
     const [currentSong, setCurrentSong] = useState(null);
-    const [queue, setQueue] = useState([]); // các bài user-add, đầu = sẽ phát ngay sau current
-    const [history, setHistory] = useState([]); // stack để prev
+    const [queue, setQueue] = useState([]);
+    const [history, setHistory] = useState([]);
+    const [isPlaying, setIsPlaying] = useState(false); // 🔥 thêm trạng thái phát nhạc
 
     const toggleQueue = () => setIsQueueVisible((p) => !p);
 
-    /**
-     * Gán danh sách DB.
-     * Nếu chưa có currentSong, set bài đầu làm current và queue mặc định là các bài sau nó.
-     */
     const setSongList = (songs) => {
         setAllSongs(songs || []);
         if (!currentSong && songs && songs.length > 0) {
             setCurrentSong(songs[0]);
-            setQueue([]); // giữ queue user-add rỗng ban đầu
+            setQueue([]);
             setHistory([]);
         }
     };
 
-    /**
-     * Play 1 bài cụ thể (do user click ở UI).
-     * - Lưu current vào history (nếu có)
-     * - Set current = target
-     * - Giữ nguyên queue (các bài user-add vẫn nằm chờ)
-     */
     const playSong = (songId) => {
         const target =
             queue.find((s) => s.id === songId) ||
@@ -39,15 +30,9 @@ export const QueueProvider = ({ children }) => {
         if (!target) return;
         if (currentSong) setHistory((h) => [...h, currentSong]);
         setCurrentSong(target);
-        // Không auto-clear queue — keep user-added queue as-is; they will play first after current
+        setIsPlaying(true); // 🔥 phát luôn
     };
 
-    /**
-     * Thêm bài vào hàng chờ theo kiểu "play next" (chèn vào đầu queue).
-     * - Nếu bài đang là current => không thêm.
-     * - Nếu đã có trong queue => move lên đầu.
-     * - Tránh duplicate.
-     */
     const addToQueue = (song) => {
         if (!song) return;
         if (currentSong && song.id === currentSong.id) return;
@@ -55,7 +40,6 @@ export const QueueProvider = ({ children }) => {
         setQueue((prev) => {
             const idx = prev.findIndex((s) => s.id === song.id);
             if (idx !== -1) {
-                // move existing item to head
                 const newQ = [...prev];
                 const [item] = newQ.splice(idx, 1);
                 return [item, ...newQ];
@@ -64,9 +48,6 @@ export const QueueProvider = ({ children }) => {
         });
     };
 
-    /**
-     * Lấy phần còn lại từ allSongs sau current, loại bỏ các bài đã có trong queue
-     */
     const getRemainingFromAll = () => {
         if (!currentSong) return allSongs.slice();
         const idx = allSongs.findIndex((s) => s.id === currentSong.id);
@@ -74,18 +55,13 @@ export const QueueProvider = ({ children }) => {
         return rem.filter((s) => !queue.some((q) => q.id === s.id));
     };
 
-    /**
-     * nextSong: Logic khi bấm Next hoặc bài kết thúc:
-     * - Nếu queue có item -> shift từ queue (đầu) -> play
-     * - Else lấy item đầu từ remaining in allSongs -> play
-     * - Nếu hết -> vòng về đầu allSongs
-     */
     const nextSong = () => {
         if (queue.length > 0) {
             const [next, ...rest] = queue;
             if (currentSong) setHistory((h) => [...h, currentSong]);
             setCurrentSong(next);
             setQueue(rest);
+            setIsPlaying(true);
             return;
         }
 
@@ -93,30 +69,31 @@ export const QueueProvider = ({ children }) => {
         if (remaining.length > 0) {
             if (currentSong) setHistory((h) => [...h, currentSong]);
             setCurrentSong(remaining[0]);
+            setIsPlaying(true);
             return;
         }
 
-        // hết danh sách -> loop về đầu allSongs (tuỳ ý)
         if (allSongs.length > 0) {
             if (currentSong) setHistory((h) => [...h, currentSong]);
             setCurrentSong(allSongs[0]);
+            setIsPlaying(true);
         }
     };
 
-    /**
-     * Prev: lấy từ history stack nếu có
-     */
     const playPrevSong = () => {
         if (history.length === 0) return;
         const prev = history[history.length - 1];
         setHistory((h) => h.slice(0, h.length - 1));
-        // khi đi lùi, không auto đưa current vào queue (để tránh thay đổi order bất ngờ)
         setCurrentSong(prev);
+        setIsPlaying(true);
     };
 
-    const clearQueue = () => {
-        setQueue([]);
-    };
+    const clearQueue = () => setQueue([]);
+
+    // 🔥 Các hàm điều khiển player toàn cục
+    const play = () => setIsPlaying(true);
+    const pause = () => setIsPlaying(false);
+    const togglePlayPause = () => setIsPlaying((prev) => !prev);
 
     return (
         <QueueContext.Provider
@@ -132,6 +109,12 @@ export const QueueProvider = ({ children }) => {
                 nextSong,
                 playPrevSong,
                 clearQueue,
+                // 🎧 Trạng thái phát
+                isPlaying,
+                setIsPlaying,
+                play,
+                pause,
+                togglePlayPause,
             }}
         >
             {children}

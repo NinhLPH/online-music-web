@@ -47,7 +47,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
         };
         fetchData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // ✅ chạy đúng 1 lần
+    }, []);
 
     // 🧩 Lấy danh sách yêu thích ban đầu
     useEffect(() => {
@@ -77,18 +77,49 @@ const PlayerBar = ({ onShowSongDetail }) => {
         audio.load();
         audio.onloadedmetadata = () => setDuration(audio.duration);
 
+        // ✅ Phát tín hiệu đổi bài
+        window.dispatchEvent(new CustomEvent("playerSongChange", { detail: currentSong }));
+
         if (isPlaying) {
-            audio.play().catch((err) => console.error("Không thể phát bài:", err));
+            audio.play().then(() => {
+                window.dispatchEvent(new CustomEvent("playerPlay"));
+            }).catch((err) => console.error("Không thể phát bài:", err));
         } else {
             audio.pause();
+            window.dispatchEvent(new CustomEvent("playerPause"));
         }
     }, [currentSong, isPlaying]);
 
+    useEffect(() => {
+        // Lắng nghe sự kiện từ SongDetail
+        const handlePlay = () => {
+            if (!audioRef.current) return;
+            audioRef.current.play().catch((err) => console.error("Không thể phát:", err));
+            setIsPlaying(true);
+        };
+
+        const handlePause = () => {
+            if (!audioRef.current) return;
+            audioRef.current.pause();
+            setIsPlaying(false);
+        };
+
+        window.addEventListener("playerPlay", handlePlay);
+        window.addEventListener("playerPause", handlePause);
+
+        return () => {
+            window.removeEventListener("playerPlay", handlePlay);
+            window.removeEventListener("playerPause", handlePause);
+        };
+    }, []);
+
+    // 🧩 Theo dõi tiến trình
     const handleTimeUpdate = () => {
         const audio = audioRef.current;
         if (audio && duration > 0) setProgress((audio.currentTime / duration) * 100);
     };
 
+    // 🧩 Bấm để tua
     const handleSeekClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
@@ -98,6 +129,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
         setProgress(percent);
     };
 
+    // 🧩 Âm lượng
     const handleVolumeClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
@@ -106,10 +138,12 @@ const PlayerBar = ({ onShowSongDetail }) => {
         if (audioRef.current) audioRef.current.volume = percent / 100;
     };
 
+    // 🧩 Replay
     const replaySong = () => {
         if (audioRef.current) audioRef.current.currentTime = 0;
     };
 
+    // 🧩 Format thời gian
     const formatTime = (sec) => {
         if (!sec || isNaN(sec)) return "0:00";
         const m = Math.floor(sec / 60);
@@ -155,6 +189,22 @@ const PlayerBar = ({ onShowSongDetail }) => {
         } catch (err) {
             console.error("Lỗi khi cập nhật yêu thích:", err);
             showToast("Không thể cập nhật danh sách yêu thích");
+        }
+    };
+
+    // 🎵 Play/Pause
+    const togglePlayPause = () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        if (isPlaying) {
+            audio.pause();
+            setIsPlaying(false);
+            window.dispatchEvent(new CustomEvent("playerPause"));
+        } else {
+            audio.play().then(() => {
+                setIsPlaying(true);
+                window.dispatchEvent(new CustomEvent("playerPlay"));
+            }).catch((err) => console.error("Không thể phát:", err));
         }
     };
 
@@ -261,7 +311,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     zIndex: 1000,
                 }}
             >
-                {/* Bên trái: thông tin bài */}
+                {/* Bên trái */}
                 <div className="d-flex align-items-center" style={{ width: "25%" }}>
                     <img
                         src={`https://picsum.photos/seed/${currentSong.id}/80`}
@@ -301,22 +351,16 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     </div>
                 </div>
 
-                {/* Giữa: điều khiển */}
+                {/* Giữa */}
                 <div className="d-flex flex-column align-items-center" style={{ width: "50%" }}>
                     <div className="d-flex align-items-center mb-2" style={{ gap: 18 }}>
-                        <button
-                            title="Previous"
-                            style={iconBtn}
-                            onClick={playPrevSong}
-                            onMouseEnter={hoverIn}
-                            onMouseLeave={hoverOut}
-                        >
+                        <button title="Previous" style={iconBtn} onClick={playPrevSong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
                             <FaStepBackward />
                         </button>
 
                         <button
                             title={isPlaying ? "Pause" : "Play"}
-                            onClick={() => setIsPlaying(!isPlaying)}
+                            onClick={togglePlayPause}
                             style={{ ...iconBtn, fontSize: 28 }}
                             onMouseEnter={hoverIn}
                             onMouseLeave={hoverOut}
@@ -324,23 +368,11 @@ const PlayerBar = ({ onShowSongDetail }) => {
                             {isPlaying ? <FaPause /> : <FaPlay />}
                         </button>
 
-                        <button
-                            title="Next"
-                            style={iconBtn}
-                            onClick={nextSong}
-                            onMouseEnter={hoverIn}
-                            onMouseLeave={hoverOut}
-                        >
+                        <button title="Next" style={iconBtn} onClick={nextSong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
                             <FaStepForward />
                         </button>
 
-                        <button
-                            title="Replay song"
-                            style={iconBtn}
-                            onClick={replaySong}
-                            onMouseEnter={hoverIn}
-                            onMouseLeave={hoverOut}
-                        >
+                        <button title="Replay song" style={iconBtn} onClick={replaySong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
                             <FaRedoAlt />
                         </button>
                     </div>
@@ -376,7 +408,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     </div>
                 </div>
 
-                {/* Bên phải: volume + queue */}
+                {/* Bên phải */}
                 <div className="d-flex align-items-center justify-content-end" style={{ width: "25%", gap: 12 }}>
                     <button
                         title="Danh sách chờ"
@@ -412,6 +444,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     <FaExpandAlt style={iconBtn} />
                 </div>
 
+                {/* Audio */}
                 <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onEnded={nextSong} />
             </div>
         </>
