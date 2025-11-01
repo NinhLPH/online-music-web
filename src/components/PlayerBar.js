@@ -15,7 +15,7 @@ import {
 } from "react-icons/fa";
 import { useQueue } from "../context/QueueContext";
 
-const PlayerBar = ({ onShowSongDetail }) => {
+const PlayerBar = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -24,12 +24,22 @@ const PlayerBar = ({ onShowSongDetail }) => {
     const [toast, setToast] = useState(null);
     const [confirmBox, setConfirmBox] = useState(null);
     const audioRef = useRef(null);
+    const hasFetched = useRef(false); // ✅ Ngăn fetch trùng lặp
 
-    const { toggleQueue, currentSong, setSongList, nextSong, playPrevSong } = useQueue();
+    const {
+        toggleQueue,
+        currentSong,
+        setSongList,
+        nextSong,
+        playPrevSong,
+        setIsPlaying: setIsPlayingGlobal,
+    } = useQueue();
 
-    // 🧩 Tải danh sách bài hát & nghệ sĩ chỉ 1 lần duy nhất
+    // 🧩 Lấy danh sách bài hát & nghệ sĩ (chỉ fetch 1 lần)
     useEffect(() => {
         const fetchData = async () => {
+            if (hasFetched.current) return;
+            hasFetched.current = true;
             try {
                 const [songRes, artistRes] = await Promise.all([
                     axios.get("http://localhost:9000/songs"),
@@ -37,7 +47,9 @@ const PlayerBar = ({ onShowSongDetail }) => {
                 ]);
                 const artists = artistRes.data;
                 const songsWithArtist = songRes.data.map((song) => {
-                    const artist = artists.find((a) => Number(a.id) === Number(song.artistId));
+                    const artist = artists.find(
+                        (a) => Number(a.id) === Number(song.artistId)
+                    );
                     return { ...song, artist: artist ? artist.name : "Unknown Artist" };
                 });
                 setSongList(songsWithArtist);
@@ -46,8 +58,7 @@ const PlayerBar = ({ onShowSongDetail }) => {
             }
         };
         fetchData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [setSongList]);
 
     // 🧩 Lấy danh sách yêu thích ban đầu
     useEffect(() => {
@@ -62,74 +73,95 @@ const PlayerBar = ({ onShowSongDetail }) => {
         fetchFavorites();
     }, []);
 
-    // ✅ Cập nhật realtime khi RightSidebar thay đổi
+    // 🧩 Lắng nghe sự kiện favoritesUpdated để đồng bộ với SongDetail
     useEffect(() => {
         const handleFavoritesUpdated = (e) => setFavorites(e.detail);
         window.addEventListener("favoritesUpdated", handleFavoritesUpdated);
-        return () => window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
+        return () =>
+            window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
     }, []);
 
-    // 🧩 Khi bài hát thay đổi
+    // 🧩 Khi đổi bài hát → phát tự động
     useEffect(() => {
         if (!currentSong || !audioRef.current) return;
         const audio = audioRef.current;
         audio.src = currentSong.src;
         audio.load();
-        audio.onloadedmetadata = () => setDuration(audio.duration);
+        audio.onloadedmetadata = () => {
+            setDuration(audio.duration);
+            audio
+                .play()
+                .then(() => {
+                    setIsPlaying(true);
+                    setIsPlayingGlobal(true);
+                    window.dispatchEvent(new CustomEvent("playerPlay"));
+                })
+                .catch((err) => console.error("Không thể tự phát:", err));
+        };
 
-        // ✅ Phát tín hiệu đổi bài
-        window.dispatchEvent(new CustomEvent("playerSongChange", { detail: currentSong }));
+        window.dispatchEvent(
+            new CustomEvent("playerSongChange", { detail: currentSong })
+        );
+    }, [currentSong, setIsPlayingGlobal]);
 
+    // 🧩 Điều khiển play/pause
+    useEffect(() => {
+        if (!audioRef.current) return;
+        const audio = audioRef.current;
         if (isPlaying) {
-            audio.play().then(() => {
-                window.dispatchEvent(new CustomEvent("playerPlay"));
-            }).catch((err) => console.error("Không thể phát bài:", err));
+            audio
+                .play()
+                .then(() => window.dispatchEvent(new CustomEvent("playerPlay")))
+                .catch((err) => console.error("Không thể phát:", err));
         } else {
             audio.pause();
             window.dispatchEvent(new CustomEvent("playerPause"));
         }
-    }, [currentSong, isPlaying]);
+    }, [isPlaying]);
 
+    // 🧩 Nhận tín hiệu play/pause từ nơi khác
     useEffect(() => {
-        // Lắng nghe sự kiện từ SongDetail
         const handlePlay = () => {
             if (!audioRef.current) return;
             audioRef.current.play().catch((err) => console.error("Không thể phát:", err));
             setIsPlaying(true);
+            setIsPlayingGlobal(true);
         };
 
         const handlePause = () => {
             if (!audioRef.current) return;
             audioRef.current.pause();
             setIsPlaying(false);
+            setIsPlayingGlobal(false);
         };
 
         window.addEventListener("playerPlay", handlePlay);
         window.addEventListener("playerPause", handlePause);
-
         return () => {
             window.removeEventListener("playerPlay", handlePlay);
             window.removeEventListener("playerPause", handlePause);
         };
-    }, []);
+    }, [setIsPlayingGlobal]);
 
-    // 🧩 Theo dõi tiến trình
     const handleTimeUpdate = () => {
         const audio = audioRef.current;
-        if (audio && duration > 0) setProgress((audio.currentTime / duration) * 100);
+        if (audio && duration > 0)
+            setProgress((audio.currentTime / duration) * 100);
     };
 
-    // 🧩 Bấm để tua
     const handleSeekClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         const percent = (clickX / rect.width) * 100;
         const newTime = (percent / 100) * duration;
-        audioRef.current.currentTime = newTime;
+        const audio = audioRef.current;
+        if (!audio) return;
+        const wasPlaying = !audio.paused;
+        audio.currentTime = newTime;
         setProgress(percent);
+        if (wasPlaying) audio.play().catch(() => { });
     };
 
-    // 🧩 Âm lượng
     const handleVolumeClick = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
@@ -138,12 +170,10 @@ const PlayerBar = ({ onShowSongDetail }) => {
         if (audioRef.current) audioRef.current.volume = percent / 100;
     };
 
-    // 🧩 Replay
     const replaySong = () => {
         if (audioRef.current) audioRef.current.currentTime = 0;
     };
 
-    // 🧩 Format thời gian
     const formatTime = (sec) => {
         if (!sec || isNaN(sec)) return "0:00";
         const m = Math.floor(sec / 60);
@@ -151,15 +181,12 @@ const PlayerBar = ({ onShowSongDetail }) => {
         return `${m}:${s.toString().padStart(2, "0")}`;
     };
 
-    if (!currentSong) return null;
-
-    // ✅ Hiển thị thông báo
     const showToast = (message) => {
         setToast(message);
         setTimeout(() => setToast(null), 2000);
     };
 
-    // ❤️ Toggle yêu thích (DB thật)
+    // ❤️ Toggle yêu thích
     const toggleFavorite = async () => {
         try {
             const res = await axios.get("http://localhost:9000/users/1");
@@ -168,12 +195,18 @@ const PlayerBar = ({ onShowSongDetail }) => {
 
             if (isFav) {
                 setConfirmBox({
-                    message: "Bạn có chắc muốn bỏ khỏi danh sách yêu thích?",
+                    message: `Bạn có chắc muốn xóa "${currentSong.title}" khỏi yêu thích?`,
                     onConfirm: async () => {
-                        const updated = user.favorites.filter((id) => id !== currentSong.id);
-                        await axios.patch("http://localhost:9000/users/1", { favorites: updated });
+                        const updated = user.favorites.filter(
+                            (id) => id !== currentSong.id
+                        );
+                        await axios.patch("http://localhost:9000/users/1", {
+                            favorites: updated,
+                        });
                         setFavorites(updated);
-                        window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updated }));
+                        window.dispatchEvent(
+                            new CustomEvent("favoritesUpdated", { detail: updated })
+                        );
                         setConfirmBox(null);
                         showToast("Đã xóa khỏi yêu thích");
                     },
@@ -181,9 +214,13 @@ const PlayerBar = ({ onShowSongDetail }) => {
                 });
             } else {
                 const updated = [...(user.favorites || []), currentSong.id];
-                await axios.patch("http://localhost:9000/users/1", { favorites: updated });
+                await axios.patch("http://localhost:9000/users/1", {
+                    favorites: updated,
+                });
                 setFavorites(updated);
-                window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updated }));
+                window.dispatchEvent(
+                    new CustomEvent("favoritesUpdated", { detail: updated })
+                );
                 showToast(`Đã thêm "${currentSong.title}" vào yêu thích`);
             }
         } catch (err) {
@@ -192,22 +229,29 @@ const PlayerBar = ({ onShowSongDetail }) => {
         }
     };
 
-    // 🎵 Play/Pause
     const togglePlayPause = () => {
         const audio = audioRef.current;
         if (!audio) return;
         if (isPlaying) {
             audio.pause();
             setIsPlaying(false);
+            setIsPlayingGlobal(false);
             window.dispatchEvent(new CustomEvent("playerPause"));
         } else {
-            audio.play().then(() => {
-                setIsPlaying(true);
-                window.dispatchEvent(new CustomEvent("playerPlay"));
-            }).catch((err) => console.error("Không thể phát:", err));
+            audio
+                .play()
+                .then(() => {
+                    setIsPlaying(true);
+                    setIsPlayingGlobal(true);
+                    window.dispatchEvent(new CustomEvent("playerPlay"));
+                })
+                .catch((err) => console.error("Không thể phát:", err));
         }
     };
 
+    if (!currentSong) return null;
+
+    const isFavorite = favorites.includes(currentSong.id);
     const iconBtn = {
         background: "none",
         border: "none",
@@ -219,81 +263,9 @@ const PlayerBar = ({ onShowSongDetail }) => {
     const hoverIn = (e) => (e.currentTarget.style.color = "#1db954");
     const hoverOut = (e) => (e.currentTarget.style.color = "#fff");
 
-    const isFavorite = favorites.includes(currentSong.id);
-
     return (
         <>
-            {/* 🔔 Toast */}
-            {toast && (
-                <div
-                    style={{
-                        position: "fixed",
-                        bottom: "100px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "#1db954",
-                        color: "#fff",
-                        padding: "8px 16px",
-                        borderRadius: 8,
-                        zIndex: 1100,
-                        fontWeight: 500,
-                    }}
-                >
-                    {toast}
-                </div>
-            )}
-
-            {/* 🧩 Confirm box */}
-            {confirmBox && (
-                <div
-                    style={{
-                        position: "fixed",
-                        bottom: "110px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        background: "#222",
-                        color: "#fff",
-                        padding: "12px 18px",
-                        borderRadius: 10,
-                        zIndex: 1200,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
-                        minWidth: 280,
-                    }}
-                >
-                    <div style={{ fontSize: "0.95rem" }}>{confirmBox.message}</div>
-                    <div style={{ display: "flex", gap: 10 }}>
-                        <button
-                            onClick={confirmBox.onConfirm}
-                            style={{
-                                background: "#1db954",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 6,
-                                padding: "4px 12px",
-                            }}
-                        >
-                            Đồng ý
-                        </button>
-                        <button
-                            onClick={confirmBox.onCancel}
-                            style={{
-                                background: "#444",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 6,
-                                padding: "4px 12px",
-                            }}
-                        >
-                            Hủy
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* 🎵 Player */}
+            {/* Player UI */}
             <div
                 style={{
                     position: "fixed",
@@ -311,12 +283,16 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     zIndex: 1000,
                 }}
             >
-                {/* Bên trái */}
+                {/* Left side */}
                 <div className="d-flex align-items-center" style={{ width: "25%" }}>
                     <img
                         src={`https://picsum.photos/seed/${currentSong.id}/80`}
                         alt="cover"
-                        onClick={() => onShowSongDetail && onShowSongDetail(currentSong)}
+                        onClick={() =>
+                            window.dispatchEvent(
+                                new CustomEvent("openSongDetail", { detail: currentSong })
+                            )
+                        }
                         style={{
                             width: 56,
                             height: 56,
@@ -326,9 +302,22 @@ const PlayerBar = ({ onShowSongDetail }) => {
                         }}
                     />
                     <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                fontWeight: 600,
+                            }}
+                        >
                             <span
-                                onClick={() => onShowSongDetail && onShowSongDetail(currentSong)}
+                                onClick={() =>
+                                    window.dispatchEvent(
+                                        new CustomEvent("openSongDetail", {
+                                            detail: currentSong,
+                                        })
+                                    )
+                                }
                                 style={{ cursor: "pointer" }}
                             >
                                 {currentSong.title}
@@ -351,13 +340,21 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     </div>
                 </div>
 
-                {/* Giữa */}
-                <div className="d-flex flex-column align-items-center" style={{ width: "50%" }}>
+                {/* Middle controls */}
+                <div
+                    className="d-flex flex-column align-items-center"
+                    style={{ width: "50%" }}
+                >
                     <div className="d-flex align-items-center mb-2" style={{ gap: 18 }}>
-                        <button title="Previous" style={iconBtn} onClick={playPrevSong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+                        <button
+                            title="Previous"
+                            style={iconBtn}
+                            onClick={playPrevSong}
+                            onMouseEnter={hoverIn}
+                            onMouseLeave={hoverOut}
+                        >
                             <FaStepBackward />
                         </button>
-
                         <button
                             title={isPlaying ? "Pause" : "Play"}
                             onClick={togglePlayPause}
@@ -367,19 +364,43 @@ const PlayerBar = ({ onShowSongDetail }) => {
                         >
                             {isPlaying ? <FaPause /> : <FaPlay />}
                         </button>
-
-                        <button title="Next" style={iconBtn} onClick={nextSong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+                        <button
+                            title="Next"
+                            style={iconBtn}
+                            onClick={nextSong}
+                            onMouseEnter={hoverIn}
+                            onMouseLeave={hoverOut}
+                        >
                             <FaStepForward />
                         </button>
-
-                        <button title="Replay song" style={iconBtn} onClick={replaySong} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+                        <button
+                            title="Replay song"
+                            style={iconBtn}
+                            onClick={replaySong}
+                            onMouseEnter={hoverIn}
+                            onMouseLeave={hoverOut}
+                        >
                             <FaRedoAlt />
                         </button>
                     </div>
 
-                    {/* Thanh tiến trình */}
-                    <div style={{ display: "flex", alignItems: "center", width: "100%", maxWidth: 500 }}>
-                        <span style={{ fontSize: "0.75rem", color: "#b3b3b3", width: 35, textAlign: "right" }}>
+                    {/* Progress bar */}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            width: "100%",
+                            maxWidth: 500,
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontSize: "0.75rem",
+                                color: "#b3b3b3",
+                                width: 35,
+                                textAlign: "right",
+                            }}
+                        >
                             {formatTime(audioRef.current?.currentTime || 0)}
                         </span>
                         <div
@@ -402,14 +423,23 @@ const PlayerBar = ({ onShowSongDetail }) => {
                                 }}
                             ></div>
                         </div>
-                        <span style={{ fontSize: "0.75rem", color: "#b3b3b3", width: 35 }}>
+                        <span
+                            style={{
+                                fontSize: "0.75rem",
+                                color: "#b3b3b3",
+                                width: 35,
+                            }}
+                        >
                             {formatTime(duration)}
                         </span>
                     </div>
                 </div>
 
-                {/* Bên phải */}
-                <div className="d-flex align-items-center justify-content-end" style={{ width: "25%", gap: 12 }}>
+                {/* Right side */}
+                <div
+                    className="d-flex align-items-center justify-content-end"
+                    style={{ width: "25%", gap: 12 }}
+                >
                     <button
                         title="Danh sách chờ"
                         onClick={toggleQueue}
@@ -419,7 +449,6 @@ const PlayerBar = ({ onShowSongDetail }) => {
                     >
                         <FaListUl />
                     </button>
-
                     <FaVolumeUp style={iconBtn} />
                     <div
                         onClick={handleVolumeClick}
@@ -440,13 +469,92 @@ const PlayerBar = ({ onShowSongDetail }) => {
                             }}
                         ></div>
                     </div>
-
                     <FaExpandAlt style={iconBtn} />
                 </div>
 
-                {/* Audio */}
-                <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onEnded={nextSong} />
+                <audio
+                    ref={audioRef}
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={nextSong}
+                />
             </div>
+
+            {/* Toast */}
+            {toast && (
+                <div
+                    style={{
+                        position: "fixed",
+                        bottom: 120,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "#333",
+                        padding: "10px 18px",
+                        borderRadius: 8,
+                        color: "#fff",
+                        fontSize: 14,
+                        opacity: 0.9,
+                        zIndex: 2000,
+                    }}
+                >
+                    {toast}
+                </div>
+            )}
+
+            {/* Confirm Box */}
+            {confirmBox && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 2001,
+                    }}
+                >
+                    <div
+                        style={{
+                            background: "#121212",
+                            padding: 20,
+                            borderRadius: 8,
+                            color: "#fff",
+                            textAlign: "center",
+                            width: 300,
+                        }}
+                    >
+                        <p style={{ marginBottom: 16 }}>{confirmBox.message}</p>
+                        <button
+                            onClick={confirmBox.onConfirm}
+                            style={{
+                                background: "#1db954",
+                                border: "none",
+                                padding: "8px 14px",
+                                borderRadius: 4,
+                                marginRight: 10,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Đồng ý
+                        </button>
+                        <button
+                            onClick={confirmBox.onCancel}
+                            style={{
+                                background: "#333",
+                                border: "none",
+                                padding: "8px 14px",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Hủy
+                        </button>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

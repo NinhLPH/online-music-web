@@ -1,5 +1,4 @@
-// /src/components/RightSidebar.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useQueue } from "../context/QueueContext";
 import { FaEllipsisH, FaTimes } from "react-icons/fa";
@@ -8,7 +7,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 export default function RightSidebar() {
     const {
         currentSong,
-        queue, // các bài user-add (sẽ phát ngay sau current)
+        queue,
         allSongs,
         isQueueVisible,
         toggleQueue,
@@ -20,6 +19,21 @@ export default function RightSidebar() {
     const [openMenu, setOpenMenu] = useState(null);
     const [toast, setToast] = useState(null);
     const [confirmBox, setConfirmBox] = useState(null);
+    const [artistInfo, setArtistInfo] = useState(null);
+
+    // 🔥 Lấy thông tin nghệ sĩ khi bài hát đổi
+    useEffect(() => {
+        const fetchArtist = async () => {
+            if (!currentSong?.artistId) return;
+            try {
+                const res = await axios.get(`http://localhost:9000/artists/${currentSong.artistId}`);
+                setArtistInfo(res.data);
+            } catch (err) {
+                console.error("Lỗi tải thông tin nghệ sĩ:", err);
+            }
+        };
+        fetchArtist();
+    }, [currentSong]);
 
     const showToast = (msg, type = "success") => {
         setToast({ msg, type });
@@ -58,7 +72,7 @@ export default function RightSidebar() {
         }
     };
 
-    // 🎵 Thêm vào playlist (DB)
+    // 🎵 Thêm vào playlist
     const handleAddToPlaylist = async (song) => {
         try {
             const playlistRes = await axios.get("http://localhost:9000/playlists/1");
@@ -72,57 +86,102 @@ export default function RightSidebar() {
         }
     };
 
-    // 🔜 Thêm ngay sau bài hiện tại
+    // 🔜 Thêm vào hàng chờ
     const handleAddToQueue = (song) => {
         addToQueue(song);
         showToast(`"${song.title}" sẽ phát ngay sau bài hiện tại`);
     };
 
+    // 🧩 Nếu danh sách chờ ẩn → hiển thị thông tin bài hát & nghệ sĩ
     if (!isQueueVisible) {
         if (!currentSong) return null;
         return (
             <div
-                className="text-white d-flex flex-column align-items-center justify-content-center"
+                className="text-white d-flex flex-column align-items-center"
                 style={{
                     width: "100%",
                     height: "calc(100vh - 110px)",
                     backgroundColor: "#181818",
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
-                    textAlign: "center",
-                    transition: "all 0.3s ease",
+                    overflowY: "auto",
                 }}
             >
                 <h6 className="text-uppercase text-muted small mb-3">Đang phát</h6>
 
                 <img
-                    src={`https://picsum.photos/seed/${currentSong.id}/200`}
+                    src={`https://picsum.photos/seed/${currentSong.id}/220`}
                     alt={currentSong.title}
                     style={{
-                        width: 200,
-                        height: 200,
+                        width: 220,
+                        height: 220,
                         borderRadius: 10,
                         objectFit: "cover",
                         marginBottom: 12,
                         cursor: "pointer",
                     }}
-                    onClick={() => window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))}
+                    onClick={() =>
+                        window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))
+                    }
                 />
 
                 <div
-                    style={{ fontWeight: 600, fontSize: "1rem", cursor: "pointer", color: "#fff" }}
-                    onClick={() => window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))}
+                    style={{
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        cursor: "pointer",
+                        color: "#fff",
+                        marginBottom: 4,
+                    }}
+                    onClick={() =>
+                        window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))
+                    }
                 >
                     {currentSong.title}
                 </div>
 
-                <div style={{ color: "#b3b3b3", fontSize: "0.9rem", marginBottom: "8px" }}>{currentSong.artist}</div>
+                <div style={{ color: "#b3b3b3", fontSize: "0.9rem", marginBottom: 16 }}>
+                    {currentSong.artist}
+                </div>
+
+                {/* ✅ Giới thiệu nghệ sĩ */}
+                {artistInfo && (
+                    <div
+                        style={{
+                            background: "#121212",
+                            borderRadius: 10,
+                            padding: "14px 16px",
+                            width: "100%",
+                            marginTop: 10,
+                        }}
+                    >
+                        <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
+                        <img
+                            src={artistInfo.coverImg}
+                            alt={artistInfo.name}
+                            style={{
+                                width: "100%",
+                                borderRadius: 8,
+                                marginBottom: 10,
+                                objectFit: "cover",
+                            }}
+                        />
+                        <div style={{ fontWeight: 600, fontSize: "1rem", marginBottom: 6 }}>
+                            {artistInfo.name}
+                        </div>
+                        <div style={{ color: "#ccc", fontSize: "0.88rem", textAlign: "justify" }}>
+                            {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
 
-    // Remaining songs from DB excluding current and those already in queue
-    const remaining = (allSongs || []).filter((s) => s.id !== currentSong?.id && !queue.some((q) => q.id === s.id));
+    // 🔽 Danh sách bài trong queue
+    const remaining = (allSongs || []).filter(
+        (s) => s.id !== currentSong?.id && !queue.some((q) => q.id === s.id)
+    );
 
     return (
         <>
@@ -136,8 +195,6 @@ export default function RightSidebar() {
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
                     paddingBottom: "40px",
-                    animation: "fadeInSidebar 0.3s ease forwards",
-                    boxSizing: "border-box",
                 }}
             >
                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -151,10 +208,7 @@ export default function RightSidebar() {
                             color: "#fff",
                             fontSize: "20px",
                             cursor: "pointer",
-                            transition: "color 0.2s ease",
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#1db954")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#fff")}
                     >
                         <FaTimes />
                     </button>
@@ -178,7 +232,9 @@ export default function RightSidebar() {
 
                 {queue.length > 0 && (
                     <>
-                        <h6 className="text-uppercase text-muted small mt-3 mb-2">Tiếp theo trong danh sách chờ</h6>
+                        <h6 className="text-uppercase text-muted small mt-3 mb-2">
+                            Tiếp theo trong danh sách chờ
+                        </h6>
                         {queue.map((song) => (
                             <SongItem
                                 key={song.id}
@@ -211,8 +267,6 @@ export default function RightSidebar() {
                                     fontSize: "0.8rem",
                                     cursor: "pointer",
                                 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.color = "#1db954")}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = "#b3b3b3")}
                             >
                                 Xóa danh sách chờ
                             </button>
@@ -222,7 +276,7 @@ export default function RightSidebar() {
 
                 {remaining.length > 0 && (
                     <>
-                        <h6 className="text-uppercase text-muted small mb-2 mt-3">Nội dung tiếp theo </h6>
+                        <h6 className="text-uppercase text-muted small mb-2 mt-3">Nội dung tiếp theo</h6>
                         {remaining.map((song) => (
                             <SongItem
                                 key={song.id}
@@ -239,7 +293,7 @@ export default function RightSidebar() {
                 )}
             </div>
 
-            {/* Confirm box */}
+            {/* Confirm Box */}
             {confirmBox && (
                 <div
                     style={{
@@ -251,7 +305,6 @@ export default function RightSidebar() {
                         color: "#fff",
                         padding: "12px 18px",
                         borderRadius: 10,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
                         zIndex: 2000,
                         display: "flex",
                         flexDirection: "column",
@@ -271,8 +324,6 @@ export default function RightSidebar() {
                                 border: "none",
                                 borderRadius: 6,
                                 padding: "4px 12px",
-                                cursor: "pointer",
-                                fontWeight: 500,
                             }}
                         >
                             Đồng ý
@@ -285,8 +336,6 @@ export default function RightSidebar() {
                                 border: "none",
                                 borderRadius: 6,
                                 padding: "4px 12px",
-                                cursor: "pointer",
-                                fontWeight: 500,
                             }}
                         >
                             Hủy
@@ -319,7 +368,7 @@ export default function RightSidebar() {
     );
 }
 
-// SongItem component (giữ menu + action)
+// 🎵 SongItem component
 function SongItem({
     song,
     active,
@@ -337,13 +386,7 @@ function SongItem({
         const rect = e.currentTarget.getBoundingClientRect();
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
-
-        if (spaceBelow < 200 && spaceAbove > 200) {
-            setOpenUpward(true);
-        } else {
-            setOpenUpward(false);
-        }
-
+        setOpenUpward(spaceBelow < 200 && spaceAbove > 200);
         setOpenMenu(openMenu === song.id ? null : song.id);
     };
 
@@ -356,20 +399,13 @@ function SongItem({
                 justifyContent: "space-between",
                 backgroundColor: active ? "#1a1a1a" : "transparent",
                 position: "relative",
-                transition: "background 0.2s",
             }}
         >
             <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }} onClick={onPlay}>
                 <img
                     src={`https://picsum.photos/seed/${song.id}/60`}
                     alt={song.title}
-                    style={{
-                        width: 55,
-                        height: 55,
-                        borderRadius: 8,
-                        marginRight: 10,
-                        objectFit: "cover",
-                    }}
+                    style={{ width: 55, height: 55, borderRadius: 8, marginRight: 10 }}
                 />
                 <div>
                     <div style={{ fontWeight: 600, color: active ? "#1db954" : "#fff", fontSize: "0.9rem" }}>
@@ -381,13 +417,7 @@ function SongItem({
 
             <div
                 onClick={handleMenuToggle}
-                style={{
-                    padding: "6px 8px",
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    fontSize: "1.1rem",
-                    color: "#ccc",
-                }}
+                style={{ padding: "6px 8px", cursor: "pointer", fontSize: "1.1rem", color: "#ccc" }}
             >
                 <FaEllipsisH />
             </div>
@@ -405,7 +435,6 @@ function SongItem({
                         background: "#2a2a2a",
                         border: "1px solid #444",
                         boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
-                        animation: openUpward ? "slideUp 0.2s ease" : "slideDown 0.2s ease",
                     }}
                 >
                     <button
@@ -416,7 +445,7 @@ function SongItem({
                             setOpenMenu(null);
                         }}
                     >
-                        + Thêm /  - Xóa khỏi yêu thích
+                        + Thêm / - Xóa khỏi yêu thích
                     </button>
                     <button
                         className="w-100 text-start text-white border-0 bg-transparent py-2 px-3"
@@ -440,19 +469,6 @@ function SongItem({
                     </button>
                 </div>
             )}
-
-            <style>
-                {`
-          @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-            </style>
         </div>
     );
 }
