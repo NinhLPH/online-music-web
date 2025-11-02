@@ -1,120 +1,143 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./MainContent.css";
 import PlayPauseButton from "./PlayPauseButton";
 import SongDetail from "./SongDetail";
+import Footer from "./Footer"
 
 function MainContent() {
   const [songs, setSongs] = useState([]);
   const [artists, setArtists] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
 
-  // 🔹 Lấy danh sách bài hát & nghệ sĩ
   useEffect(() => {
-    axios
-      .get("http://localhost:9000/songs")
-      .then((res) => setSongs(res.data))
-      .catch((err) => console.error("Error fetching songs:", err));
-
-    axios
-      .get("http://localhost:9000/artists")
-      .then((res) => setArtists(res.data))
-      .catch((err) => console.error("Error fetching artists:", err));
+    axios.get("http://localhost:9000/songs").then(res => setSongs(res.data));
+    axios.get("http://localhost:9000/artists").then(res => setArtists(res.data));
   }, []);
 
-  // 🔹 Khi click ở MainContent → mở SongDetail
-  const showSongDetail = useCallback((song) => {
-    setSelectedSong(song);
-  }, []);
-
-  // 🔹 Khi click ở PlayerBar → mở SongDetail (qua sự kiện toàn cục)
-  useEffect(() => {
-    const handleOpenSongDetail = (e) => {
-      setSelectedSong(e.detail);
-    };
-    window.addEventListener("openSongDetail", handleOpenSongDetail);
-    return () =>
-      window.removeEventListener("openSongDetail", handleOpenSongDetail);
-  }, []);
-
-  // 🔹 Ẩn thanh cuộn khi mở SongDetail
-  useEffect(() => {
-    document.body.style.overflow = selectedSong ? "hidden" : "auto";
-  }, [selectedSong]);
+  const showSongDetail = useCallback((song) => setSelectedSong(song), []);
 
   const getArtistName = (id) =>
-    artists.find((a) => a.id === id)?.name || "Unknown Artist";
-  const getSongImage = (song) => `https://picsum.photos/seed/${song.id}/300`;
+    artists.find((a) => String(a.id) === String(id))?.name || "Unknown Artist";
+
+  const getSongImage = (song) =>
+    `https://picsum.photos/seed/${song.id}/300`;
+
+  const formatDuration = (seconds) =>
+    Math.round(seconds / 60) + " phút";
 
   return (
     <div
-      className="container-fluid py-3 text-light"
+      className="text-light"
       style={{
         backgroundColor: "#121212",
-        position: "relative",
-        minHeight: "calc(100vh - 90px)",
-        overflowY: selectedSong ? "hidden" : "auto",
+        height: "calc(100vh - 90px)",
+        overflowY: "auto",
+        paddingBottom: "120px", // ✅ Chừa Footer & PlayerBar
       }}
     >
       {!selectedSong && (
         <>
-          <h4 className="fw-bold mb-4">All Songs</h4>
-          <div className="row row-cols-2 row-cols-md-4 g-4">
-            {songs.map((song) => (
-              <div key={song.id} className="col">
-                <div className="card bg-dark text-white border-0 h-100 position-relative hover-card">
-                  <div
-                    className="position-relative"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => showSongDetail(song)}
-                  >
-                    <img
-                      src={getSongImage(song)}
-                      alt={song.title}
-                      className="card-img-top rounded"
-                      style={{ objectFit: "cover", height: "180px" }}
-                    />
-                  </div>
+          {/* 🎵 SONG LIST */}
+          <div className="container-fluid py-3">
+            <h4 className="fw-bold mb-3">All Songs</h4>
 
-                  {/* Nút Play/Pause */}
+            <div className="row row-cols-5 g-3">
+              {songs.map((song) => (
+                <div key={song.id} className="col" style={{ minWidth: "160px" }}>
                   <div
-                    className="position-absolute bottom-0 end-0 m-3"
+                    className="card border-0 h-100"
                     style={{
-                      zIndex: 3,
-                      backgroundColor: "#1db954",
-                      borderRadius: "50%",
-                      width: "44px",
-                      height: "44px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
+                      backgroundColor: "#121212",
+                      color: "#fff",
+                      cursor: "pointer",
                     }}
                   >
-                    <PlayPauseButton song={song} />
-                  </div>
+                    {/* Ảnh */}
+                    <div className="position-relative">
+                      <img
+                        src={getSongImage(song)}
+                        className="card-img-top rounded"
+                        style={{
+                          height: "135px",
+                          width: "100%",
+                          objectFit: "cover",
+                        }}
+                        alt={song.title}
+                        onClick={() => showSongDetail(song)}
+                      />
 
-                  <div className="card-body px-2">
-                    <h6
-                      className="card-title mb-1 text-truncate"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => showSongDetail(song)}
-                    >
-                      {song.title}
-                    </h6>
-                    <p className="card-text text-muted small mb-0 text-truncate">
-                      {getArtistName(song.artistId)}
+                      {/* ✅ Play button position */}
+                      <div
+                        className="position-absolute"
+                        style={{
+                          bottom: "8px",
+                          right: "8px",
+                          backgroundColor: "#1db954",
+                          borderRadius: "50%",
+                          width: "36px",
+                          height: "36px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 2,
+                        }}
+                      >
+                        <PlayPauseButton song={song} />
+                      </div>
+                    </div>
+
+                    {/* Info text */}
+                    <div className="card-body px-2 py-2">
+                      <h6 className="text-truncate mb-1">{song.title}</h6>
+                      <p className="small mb-1 text-truncate" style={{ color: "#ddd" }}>
+                        {getArtistName(song.artistId)}
+                      </p>
+                      <p className="text-secondary small mb-0">
+                        {formatDuration(song.duration)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 👤 ARTISTS LIST */}
+          <div className="container-fluid pt-4">
+            <h4 className="fw-bold mb-3">Artists</h4>
+
+            <div className="row row-cols-5 g-3">
+              {artists.map((artist) => (
+                <div key={artist.id} className="col text-center" style={{ minWidth: "160px" }}>
+                  <div
+                    className="card border-0 bg-dark h-100 p-3"
+                    style={{ backgroundColor: "#121212" }}
+                  >
+                    <img
+                      src={artist.coverImg}
+                      className="rounded-circle mx-auto"
+                      style={{
+                        width: "110px",
+                        height: "110px",
+                        objectFit: "cover",
+                      }}
+                      alt={artist.name}
+                    />
+                    <p className="mt-2 text-truncate text-white">
+                      {artist.name}
                     </p>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </>
       )}
 
-      {/* ✅ SongDetail chỉ mở khi click */}
       {selectedSong && <SongDetail song={selectedSong} />}
+      
+            <div  style={{ margin : "40px 0px 0px 0px" }}>{Footer && <Footer />}</div>
     </div>
   );
 }
