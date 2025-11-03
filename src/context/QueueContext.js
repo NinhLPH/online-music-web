@@ -1,5 +1,4 @@
-// /src/context/QueueContext.js
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const QueueContext = createContext();
 
@@ -9,9 +8,32 @@ export const QueueProvider = ({ children }) => {
     const [currentSong, setCurrentSong] = useState(null);
     const [queue, setQueue] = useState([]);
     const [history, setHistory] = useState([]);
-    const [isPlaying, setIsPlaying] = useState(false); // 🔥 thêm trạng thái phát nhạc
+    const [isPlaying, setIsPlaying] = useState(false);
 
     const toggleQueue = () => setIsQueueVisible((p) => !p);
+
+    // 🧩 Load từ localStorage khi app khởi động
+    useEffect(() => {
+        const saved = localStorage.getItem("playerState");
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.currentSong) setCurrentSong(parsed.currentSong);
+                if (parsed.isPlaying !== undefined) setIsPlaying(parsed.isPlaying);
+            } catch (err) {
+                console.error("Lỗi khôi phục player:", err);
+            }
+        }
+    }, []);
+
+    // 🧩 Lưu lại mỗi khi currentSong hoặc isPlaying thay đổi
+    useEffect(() => {
+        const data = {
+            currentSong,
+            isPlaying,
+        };
+        localStorage.setItem("playerState", JSON.stringify(data));
+    }, [currentSong, isPlaying]);
 
     const setSongList = (songs) => {
         setAllSongs(songs || []);
@@ -30,7 +52,7 @@ export const QueueProvider = ({ children }) => {
         if (!target) return;
         if (currentSong) setHistory((h) => [...h, currentSong]);
         setCurrentSong(target);
-        setIsPlaying(true); // 🔥 phát luôn
+        setIsPlaying(true);
     };
 
     const addToQueue = (song) => {
@@ -90,7 +112,6 @@ export const QueueProvider = ({ children }) => {
 
     const clearQueue = () => setQueue([]);
 
-    // 🔥 Các hàm điều khiển player toàn cục
     const play = () => setIsPlaying(true);
     const pause = () => setIsPlaying(false);
     const togglePlayPause = () => setIsPlaying((prev) => !prev);
@@ -109,7 +130,6 @@ export const QueueProvider = ({ children }) => {
                 nextSong,
                 playPrevSong,
                 clearQueue,
-                // 🎧 Trạng thái phát
                 isPlaying,
                 setIsPlaying,
                 play,

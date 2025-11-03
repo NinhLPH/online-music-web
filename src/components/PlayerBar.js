@@ -14,6 +14,7 @@ import {
     FaCheck,
 } from "react-icons/fa";
 import { useQueue } from "../context/QueueContext";
+import { useNavigate } from "react-router-dom";
 
 const PlayerBar = () => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -24,7 +25,8 @@ const PlayerBar = () => {
     const [toast, setToast] = useState(null);
     const [confirmBox, setConfirmBox] = useState(null);
     const audioRef = useRef(null);
-    const hasFetched = useRef(false); // ✅ Ngăn fetch trùng lặp
+    const hasFetched = useRef(false);
+    const navigate = useNavigate();
 
     const {
         toggleQueue,
@@ -60,6 +62,31 @@ const PlayerBar = () => {
         fetchData();
     }, [setSongList]);
 
+    // 🧩 Lưu lại vị trí phát
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+        const saveProgress = () => {
+            localStorage.setItem("playerProgress", audio.currentTime);
+        };
+        audio.addEventListener("timeupdate", saveProgress);
+        return () => audio.removeEventListener("timeupdate", saveProgress);
+    }, []);
+
+    // 🧩 Khôi phục vị trí nghe gần nhất
+    useEffect(() => {
+        const audio = audioRef.current;
+        const savedTime = parseFloat(localStorage.getItem("playerProgress") || "0");
+        if (audio && savedTime > 2) {
+            audio.currentTime = savedTime;
+        }
+    }, [currentSong]);
+
+    // 🧩 Xoá vị trí khi đổi bài
+    useEffect(() => {
+        localStorage.removeItem("playerProgress");
+    }, [currentSong]);
+
     // 🧩 Lấy danh sách yêu thích ban đầu
     useEffect(() => {
         const fetchFavorites = async () => {
@@ -73,7 +100,7 @@ const PlayerBar = () => {
         fetchFavorites();
     }, []);
 
-    // 🧩 Lắng nghe sự kiện favoritesUpdated để đồng bộ với SongDetail
+    // 🧩 Đồng bộ yêu thích giữa các component
     useEffect(() => {
         const handleFavoritesUpdated = (e) => setFavorites(e.detail);
         window.addEventListener("favoritesUpdated", handleFavoritesUpdated);
@@ -81,22 +108,34 @@ const PlayerBar = () => {
             window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
     }, []);
 
-    // 🧩 Khi đổi bài hát → phát tự động
+    // 🧩 Khi đổi bài hát → khôi phục hoặc phát mới
     useEffect(() => {
         if (!currentSong || !audioRef.current) return;
         const audio = audioRef.current;
+        const savedState = JSON.parse(localStorage.getItem("playerState") || "{}");
+
         audio.src = currentSong.src;
         audio.load();
+
         audio.onloadedmetadata = () => {
             setDuration(audio.duration);
-            audio
-                .play()
-                .then(() => {
-                    setIsPlaying(true);
-                    setIsPlayingGlobal(true);
-                    window.dispatchEvent(new CustomEvent("playerPlay"));
-                })
-                .catch((err) => console.error("Không thể tự phát:", err));
+
+            if (savedState?.currentSong?.id === currentSong.id) {
+                // 🔸 Nếu load lại bài đang phát trước đó → KHÔNG tự play
+                setIsPlaying(false);
+                setIsPlayingGlobal(false);
+                audio.pause();
+            } else {
+                // 🔹 Nếu là bài mới → phát luôn
+                audio
+                    .play()
+                    .then(() => {
+                        setIsPlaying(true);
+                        setIsPlayingGlobal(true);
+                        window.dispatchEvent(new CustomEvent("playerPlay"));
+                    })
+                    .catch((err) => console.error("Không thể tự phát:", err));
+            }
         };
 
         window.dispatchEvent(
@@ -119,22 +158,20 @@ const PlayerBar = () => {
         }
     }, [isPlaying]);
 
-    // 🧩 Nhận tín hiệu play/pause từ nơi khác
+    // 🧩 Lắng nghe tín hiệu play/pause toàn cục
     useEffect(() => {
         const handlePlay = () => {
             if (!audioRef.current) return;
-            audioRef.current.play().catch((err) => console.error("Không thể phát:", err));
+            audioRef.current.play().catch(() => { });
             setIsPlaying(true);
             setIsPlayingGlobal(true);
         };
-
         const handlePause = () => {
             if (!audioRef.current) return;
             audioRef.current.pause();
             setIsPlaying(false);
             setIsPlayingGlobal(false);
         };
-
         window.addEventListener("playerPlay", handlePlay);
         window.addEventListener("playerPause", handlePause);
         return () => {
@@ -143,6 +180,7 @@ const PlayerBar = () => {
         };
     }, [setIsPlayingGlobal]);
 
+    // 🧩 Xử lý thanh tiến trình
     const handleTimeUpdate = () => {
         const audio = audioRef.current;
         if (audio && duration > 0)
@@ -288,11 +326,8 @@ const PlayerBar = () => {
                     <img
                         src={`https://picsum.photos/seed/${currentSong.id}/80`}
                         alt="cover"
-                        onClick={() =>
-                            window.dispatchEvent(
-                                new CustomEvent("openSongDetail", { detail: currentSong })
-                            )
-                        }
+                        onClick={() => navigate(`/song/${currentSong.id}`)}
+
                         style={{
                             width: 56,
                             height: 56,
@@ -311,13 +346,8 @@ const PlayerBar = () => {
                             }}
                         >
                             <span
-                                onClick={() =>
-                                    window.dispatchEvent(
-                                        new CustomEvent("openSongDetail", {
-                                            detail: currentSong,
-                                        })
-                                    )
-                                }
+                                onClick={() => navigate(`/song/${currentSong.id}`)}
+
                                 style={{ cursor: "pointer" }}
                             >
                                 {currentSong.title}
