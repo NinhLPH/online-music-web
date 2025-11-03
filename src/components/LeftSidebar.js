@@ -157,7 +157,8 @@ export default function LeftSidebar({ onSelectPlaylist }) {
             <div
               key={song.id}
               className="sidebar-song"
-              onClick={() => setSelectedSong(song)}
+              onClick={() => window.dispatchEvent(new CustomEvent("showSongDetail", { detail: song }))}
+
               style={{
                 display: "flex",
                 alignItems: "center",
