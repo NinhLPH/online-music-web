@@ -1,7 +1,7 @@
 {
   "users": [
     {
-      "id": 1,
+      "id": "1",
       "username": "user1",
       "password": "user1",
       "avatar": "https://picsum.photos/seed/user1/100/100",
@@ -11,7 +11,7 @@
       ]
     },
     {
-      "id": 2,
+      "id": "2",
       "username": "user2",
       "password": "user2",
       "avatar": "https://picsum.photos/seed/user2/100/100",
@@ -22,19 +22,19 @@
   ],
   "artists": [
     {
-      "id": 1,
+      "id": "1",
       "name": "Sơn Tùng M-TP",
       "coverImg": "/assets/artists-image/son-tung-mtp.jpg",
       "description": "Sơn Tùng M-TP là ca sĩ, nhạc sĩ và nhà sản xuất âm nhạc Việt Nam. Anh nổi tiếng với các bản hit như 'Chúng Ta Của Hiện Tại', 'Muộn Rồi Mà Sao Còn' và 'Lạc Trôi'."
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "Taylor Swift",
       "coverImg": "/assets/artists-image/taylor-swift.jpg",
       "description": "Taylor Swift là ca sĩ, nhạc sĩ người Mỹ, nổi tiếng với khả năng viết nhạc kể chuyện. Cô là một trong những nghệ sĩ có ảnh hưởng nhất thế giới với các album như 'Midnights' và '1989'."
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Lofi Girl",
       "coverImg": "/assets/artists-image/lofi-girl.jpg",
       "description": "Lofi Girl nổi tiếng với các bản nhạc lofi chill giúp học tập và thư giãn. Hình ảnh biểu tượng cô gái học tập bên cửa sổ đã trở thành một hiện tượng internet."
@@ -42,21 +42,21 @@
   ],
   "albums": [
     {
-      "id": 10,
+      "id": "10",
       "title": "Chúng Ta (Single)",
       "artistId": 1,
       "coverImg": "https://picsum.photos/seed/album10/300/300",
       "releaseYear": 2020
     },
     {
-      "id": 20,
+      "id": "20",
       "title": "Midnights",
       "artistId": 2,
       "coverImg": "https://picsum.photos/seed/album20/300/300",
       "releaseYear": 2022
     },
     {
-      "id": 30,
+      "id": "30",
       "title": "Chillhop Dreams",
       "artistId": 3,
       "coverImg": "https://picsum.photos/seed/album30/300/300",
@@ -65,7 +65,7 @@
   ],
   "songs": [
     {
-      "id": 101,
+      "id": "101",
       "title": "Chúng Ta Của Hiện Tại",
       "artistId": 1,
       "albumId": 10,
@@ -75,7 +75,7 @@
       "lyrics": "Mùa thu mang giấc mơ quay về\nVẫn nguyên vẹn như hôm nào\nLá bay theo gió xôn xao\nChốn xưa em chờ (chốn xưa em chờ)\nĐoạn đường ngày nào nơi ta từng đón đưa\nCòn vấn vương không phai mờ\nGiấu yêu thương trong vần thơ\nChúng ta...\nLà áng mây bên trời vội vàng ngang qua\nChúng ta...\nChẳng thể nâng niu những câu thề\nCứ như vậy thôi, không một lời, lặng lẽ thế chia xa\nChiều mưa bên hiên vắng buồn\nCòn ai thương ai, mong ai?\nĐiều anh luôn giữ kín trong tim\nThương em đôi mắt ướt nhòa\nĐiều anh luôn giữ kín trong tim này\nThương em đâu đó khóc òa\nĐiều anh luôn giữ kín trong tim này\nNgày mai nắng gió, sương hao gầy\nCó ai thương, lắng lo cho em? (Whoo-whoo-whoo)\nĐiều anh luôn giữ kín trong tim\nThương em, anh mãi xin là\nĐiều anh luôn giữ kín trong tim này\nThương em vì thương thôi mà\nĐiều anh luôn giữ kín trong tim này\nDù cho nắng tắt, xuân thay màu\nHéo khô đi tháng năm xưa kia\n(Anh nguyện ghi mãi trong tim)\n\"Nắng vương trên cành héo khô những kỉ niệm xưa kia\"\n\"Ngày mai, người luyến lưu về giấc mơ từng có, liệu có ta?\"\nCó anh nơi đó không?\nCó anh nơi đó không?\n(Liệu có ta?)\nChúng ta...\nLà áng mây bên trời vội vàng ngang qua\nChúng ta...\nChẳng thể nâng niu những câu thề\nCứ như vậy thôi, không một lời, lặng lẽ thế chia xa\nChiều mưa bên hiên vắng buồn\nCòn ai thương ai, mong ai?\nĐiều anh luôn giữ kín trong tim\nThương em đôi mắt ướt nhòa\nĐiều anh luôn giữ kín trong tim này\nThương em đâu đó khóc òa\nĐiều anh luôn giữ kín trong tim này\nNgày mai nắng gió, sương hao gầy\nCó ai thương, lắng lo cho em? (Whoo-whoo-whoo)\nĐiều anh luôn giữ kín trong tim\nThương em, anh mãi xin là\nĐiều anh luôn giữ kín trong tim này\nThương em vì thương thôi mà\nĐiều anh luôn giữ kín trong tim này\nDù cho nắng tắt, xuân thay màu\nHéo khô đi tháng năm xưa kia\n(Anh nguyện ghi mãi trong tim)\nNo, no, no\nNo, no, no\nĐiều anh luôn giữ kín trong tim (giữ kín trong tim này)\nGiữ mãi trong tim này (giữ mãi trong tim này)\nGiữ mãi trong tim mình (giữ mãi trong tim mình)\nGiữ...\nCó anh nơi đó không?\nCó anh nơi đó không?\n(Whoo-whoo-whoo-whoo)\nĐiều anh luôn giữ kín trong tim (no, no)\nĐiều anh luôn giữ kín trong tim này (no, no)\nĐiều anh luôn giữ kín trong tim này\n(Ngày mai, nắng gió, sương hao gầy)\n(Có ai thương, lắng lo cho em?)\nĐiều anh luôn giữ kín trong tim (no, no)\nĐiều anh luôn giữ kín trong tim này (no, no)\nĐiều anh luôn giữ kín trong tim này\n(Dù cho nắng tắt, xuân thay màu)\n(Héo khô đi tháng năm xưa kia)\n(Anh nguyện ghi mãi trong tim)\nĐiều anh luôn giữ kín trong tim\nThương em đôi mắt ướt nhòa\nĐiều anh luôn giữ kín trong tim này\nThương em đâu đó khóc òa\nĐiều anh luôn giữ kín trong tim này\nNgày mai nắng gió, sương hao gầy\nCó ai thương, lắng lo cho em? (Whoo-whoo-whoo)\nĐiều anh luôn giữ kín trong tim\nThương em, anh mãi xin là\nĐiều anh luôn giữ kín trong tim này\nThương em vì thương thôi mà\nĐiều anh luôn giữ kín trong tim này\nDù cho nắng tắt, xuân thay màu\nHéo khô đi tháng năm xưa kia\n(Anh nguyện ghi mãi trong tim)\n"
     },
     {
-      "id": 102,
+      "id": "102",
       "title": "Muộn Rồi Mà Sao Còn",
       "artistId": 1,
       "albumId": 10,
@@ -85,7 +85,7 @@
       "lyrics": "Muộn rồi mà sao còn\nNhìn lên trần nhà rồi quay ra lại quay vào\nNằm trằn trọc vậy đến sáng mai\nÔm tương tư nụ cười của ai đó\nLàm con tim ngô nghê như muốn khóc oà\nVắt tay lên trên trán mơ mộng\nĐược đứng bên em trong nắng xuân hồng\nMột giờ sáng\nTrôi qua trôi nhanh kéo theo ưu phiền miên man\nÂm thầm gieo tên em vẽ lên hi vọng\nĐúng là yêu thật rồi còn không thì hơi phí này\nCứ thế loanh quanh loanh quanh loanh quanh lật qua lật lại hai giờ\nNhững ngôi sao trên cao\nLà người bạn tâm giao\nLắng nghe anh luyên thuyên về một tình đầu đẹp tựa chiêm bao\nCó nghe thôi đã thấy ngọt ngào đủ biết anh si mê em nhường nào\nÍt khi văn thơ anh dạt dào bụng đói nhưng vui quên luôn cồn cào\nNắm đôi tay kiêu sa\nĐược một lần không ta\nNghĩ qua thôi con tim trong anh đập tung lên rung nóc rung nhà\nHoá ra yêu đơn phương một người\nHoá ra khi tơ vương một người\nBa giờ đêm vẫn ngồi cười\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong cơn mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nCó thế cũng khiến anh vui điên lên\nNgỡ như em đang bên\nChắp bút đôi ba câu thơ ngọt ngào\nMuốn em đặt tên\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong giấc mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nYêu đến vậy thôi phát điên rồi làm sao giờ\nChịu\nĐêm nay không ngủ tay kê lên tủ\nMiên man anh tranh thủ\nChơi vơi suy tư bao nhiêu cho đủ\nYêu em ngu ngơ mình tôi\nYêu không quan tâm ngày trôi\nYêu ánh mắt bờ môi\nYêu đơn phương vậy thôi\nLại còn chối\nCon tim thẹn thùng đập lạc lối liên hồi\nĐừng chày cối\nMiệng cười cả ngày vậy là chết toi rồi\nNgày càng nhiều thêm\nTình yêu cho em ngày càng nhiều thêm\nMuốn nắm đôi bàn tay đó một lần\nDu dương chìm sâu trong từng câu ca dịu êm\nNhững ngôi sao trên cao là người bạn tâm giao\nLắng nghe anh luyên thuyên về một tình đầu đẹp tựa chiêm bao\nCó nghe tôi đã thấy ngọt ngào đủ biết anh si mê em nhường nào\nÍt khi văn thơ anh dạt dào bụng đói nhưng vui quên luôn cồn cào\nNắm đôi tay kiêu sa\nĐược một lần không ta\nNghĩ qua thôi con tim trong anh đập tung lên rung nóc rung nhà\nHoá ra yêu đơn phương một người\nHoá ra khi tơ vương một người\nBa giờ đêm vẫn ngồi cười\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong cơn mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nCó thế cũng khiến anh vui điên lên\nNgỡ như em đang bên\nChắp bút đôi ba câu thơ ngọt ngào\nMuốn em đặt tên\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong giấc mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nYêu đến vậy thôi phát điên rồi làm sao giờ\nEm xinh như một thiên thần\nNhư một thiên thần\nNhư một thiên thần\nNgỡ như em là thiên thần\nXinh như một thiên thần\nNhư một thiên thần\nEm xinh như một thiên thần\nNhư một thiên thần\nNhư một thiên thần\nNgỡ như em là thiên thần\nNgỡ như ngỡ như\nNgỡ như ngỡ như ngỡ như\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong cơn mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nCó thế cũng khiến anh vui điên lên\nNgỡ như em đang bên\nChắp bút đôi ba câu thơ ngọt ngào\nMuốn em đặt tên\nCứ ôm anh đi ôm anh đi ôm anh đi ôm anh đi\nÔm trong giấc mơ trong cơn mơ trong cơn mơ ôm trong cơn mơ\nYêu đến vậy thôi phát điên rồi làm sao giờ"
     },
     {
-      "id": 201,
+      "id": "201",
       "title": "Anti-Hero",
       "artistId": 2,
       "albumId": 20,
@@ -95,7 +95,7 @@
       "lyrics": "I have this thing where I get older but just never wiser\nMidnights become my afternoons\nWhen my depression works the graveyard shift\nAll of the people I've ghosted stand there in the room\nI should not be left to my own devices\nThey come with prices and vices\nI end up in crisis (tale as old as time)\nI wake up screaming from dreaming\nOne day, I'll watch as you're leaving\n'Cause you got tired of my scheming (for the last time)\nIt's me, hi, I'm the problem, it's me\nAt tea time, everybody agrees\nI'll stare directly at the sun but never in the mirror\nIt must be exhausting always rooting for the anti-hero\nSometimes I feel like everybody is a sexy baby\nAnd I'm a monster on the hill\nToo big to hang out, slowly lurching toward your favorite city\nPierced through the heart, but never killed\nDid you hear my covert narcissism I disguise as altruism\nLike some kind of congressman? (Tale as old as time)\nI wake up screaming from dreaming\nOne day, I'll watch as you're leaving\nAnd life will lose all its meaning (for the last time)\nIt's me, hi, I'm the problem, it's me (I'm the problem, it's me)\nAt tea time, everybody agrees\nI'll stare directly at the sun but never in the mirror\nIt must be exhausting always rooting for the anti-hero\nI have this dream my daughter-in-law kills me for the money\nShe thinks I left them in the will\nThe family gathers 'round and reads it and then someone screams out\n\"She's laughing up at us from hell\"\nIt's me, hi, I'm the problem, it's me\nIt's me, hi, I'm the problem, it's me\nIt's me, hi, everybody agrees, everybody agrees\nIt's me, hi (hi), I'm the problem, it's me (I'm the problem, it's me)\nAt tea (tea) time (time), everybody agrees (everybody agrees)\nI'll stare directly at the sun but never in the mirror\nIt must be exhausting always rooting for the anti-hero"
     },
     {
-      "id": 202,
+      "id": "202",
       "title": "Lavender Haze",
       "artistId": 2,
       "albumId": 20,
@@ -105,7 +105,7 @@
       "lyrics": "Meet me at midnight\nStarin' at the ceilin' with you\nOh, you don't ever say too much\nAnd you don't really read into\nMy melancholia\nI've been under scrutiny (yeah, oh, yeah)\nYou handle it beautifully (yeah, oh, yeah)\nAll this shit is new to me (yeah, oh, yeah)\nI feel the lavender haze creepin' up on me\nSurreal, I'm damned if I do give a damn what people say\nNo deal, the 1950s shit they want from me\nI just wanna stay in that lavender haze\nAll they keep askin' me (all they keep askin' me)\nIs if I'm gonna be your bride\nThe only kind of girl they see (only kind of girl they see)\nIs a one-night or a wife\nI find it dizzying (yeah, oh, yeah)\nThey're bringin' up my history (yeah, oh, yeah)\nBut you aren't even listening (yeah, oh, yeah)\n(Ooh-whoa)\nI feel the lavender haze creepin' up on me\nSurreal, I'm damned if I do give a damn what people say\nNo deal, the 1950s shit they want from me\nI just wanna stay in that lavender haze\nThat lavender haze\nTalk your talk and go viral\nI just need this love spiral\nGet it off your chest\nGet it off my desk (get it off my desk)\nTalk your talk and go viral\nI just need this love spiral\nGet it off your chest\nGet it off my desk\n(Ooh-whoa)\nI feel (I feel) the lavender haze creepin' up on me\nSurreal, I'm damned if I do give a damn what people say (oh, yeah)\nNo deal (no deal), the 1950s shit they want from me\nI just wanna stay in that lavender haze\nGet it off your chest\nGet it off my desk\nThat lavender haze, I just wanna stay\nI just wanna stay in that lavender haze"
     },
     {
-      "id": 301,
+      "id": "301",
       "title": "Midnight Stroll",
       "artistId": 3,
       "albumId": 30,
@@ -115,7 +115,7 @@
       "lyrics": "Không có lời."
     },
     {
-      "id": 302,
+      "id": "302",
       "title": "Coffee Shop Vibes",
       "artistId": 3,
       "albumId": 30,
@@ -127,7 +127,7 @@
   ],
   "playlists": [
     {
-      "id": 1,
+      "id": "1",
       "name": "V-Pop Yêu Thích",
       "userId": 1,
       "description": "Những bài V-Pop hay nhất của Sơn Tùng.",
@@ -137,7 +137,7 @@
       ]
     },
     {
-      "id": 2,
+      "id": "2",
       "name": "US-UK Hits",
       "userId": 1,
       "description": "Top hits US-UK.",
@@ -147,7 +147,7 @@
       ]
     },
     {
-      "id": 3,
+      "id": "3",
       "name": "Lofi Coding Session",
       "userId": 2,
       "description": "Nhạc chill để code.",

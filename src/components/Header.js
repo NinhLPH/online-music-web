@@ -6,11 +6,9 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
 /**
-
-Header có ô tìm kiếm bài hát theo từ khóa.
-
-Kết quả được gửi đến MainContent qua CustomEvent("searchSongs").
-*/
+ * Header có ô tìm kiếm bài hát theo từ khóa.
+ * Kết quả được gửi đến MainContent qua CustomEvent("searchSongs").
+ */
 export default function Header() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -30,23 +28,41 @@ export default function Header() {
 
     setIsLoading(true);
     try {
-      const res = await axios.get("http://localhost:9000/songs");
-      const allSongs = res.data || [];
-      const results = allSongs.filter(
+      // Lấy dữ liệu từ cả songs và artists
+      const [songsRes, artistsRes] = await Promise.all([
+        axios.get("http://localhost:9000/songs"),
+        axios.get("http://localhost:9000/artists"),
+      ]);
+
+      const allSongs = songsRes.data || [];
+      const allArtists = artistsRes.data || [];
+
+      // Lọc kết quả
+      const matchedSongs = allSongs.filter(
         (s) =>
           s.title.toLowerCase().includes(query.toLowerCase()) ||
           s.description?.toLowerCase().includes(query.toLowerCase())
       );
 
-      // Gửi kết quả sang MainContent
-      window.dispatchEvent(new CustomEvent("searchSongs", { detail: results }));
+      const matchedArtists = allArtists.filter((a) =>
+        a.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      // 🔄 Gửi kết quả sang MainContent
+      window.dispatchEvent(
+        new CustomEvent("searchSongs", {
+          detail: {
+            keyword: query,
+            songs: matchedSongs,
+            artists: matchedArtists,
+          },
+        })
+      );
     } catch (err) {
-      console.error("Lỗi khi tìm kiếm bài hát:", err);
+      console.error("Lỗi khi tìm kiếm:", err);
     } finally {
       setIsLoading(false);
     }
-
-
   };
 
   return (
@@ -55,20 +71,26 @@ export default function Header() {
         {/* Logo */}
         <div className="d-flex align-items-center">
           <img
-            src="https://a-v2.sndcdn.com/assets/images/sc-icons/ios-a62dfc8bdb.png
-"
+            src="/Logo.jpg"
             alt="Logo"
-            style={{ height: "40px", cursor: "pointer" }}
-            onClick={() => window.location.reload()}
+            style={{
+              height: "45px",
+              width: "45px",
+              cursor: "pointer",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "2px solid #1db954",
+            }}
+            onClick={() => navigate("/home")}
           />
         </div>
 
         {/* Menu */}
         <ul className="navbar-nav d-flex flex-row mx-3">
           <li className="nav-item mx-2">
-            <a href="#" className="nav-link text-white">
+            <Link to="/home" className="nav-link text-white">
               Home
-            </a>
+            </Link>
           </li>
           <li className="nav-item mx-2">
             <a href="#" className="nav-link text-white">
@@ -92,7 +114,7 @@ export default function Header() {
             <input
               type="text"
               className="form-control"
-              placeholder="Tìm kiếm bài hát..."
+              placeholder="Tìm kiếm bài hát hoặc nghệ sĩ..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
             />
@@ -141,7 +163,5 @@ export default function Header() {
         </div>
       </div>
     </nav>
-
-
   );
 }

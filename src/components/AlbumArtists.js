@@ -37,21 +37,14 @@ function AlbumArtists() {
     <div
       className="bg-dark text-light"
       style={{
-        height: "calc(100vh - 90px)", // trừ thanh PlayerBar
-        overflowY: "scroll",
+        height: "calc(100vh - 160px)", // ✅ Header (70px) + PlayerBar (90px)
+        overflowY: "auto", // ✅ chỉ phần giữa cuộn
         scrollbarWidth: "none", // Firefox
         msOverflowStyle: "none", // IE/Edge
       }}
-      onWheel={(e) => e.stopPropagation()} // tránh xung đột scroll
     >
       {/* Ẩn thanh cuộn trên Chrome */}
-      <style>
-        {`
-          ::-webkit-scrollbar {
-            display: none;
-          }
-        `}
-      </style>
+      <style>{`::-webkit-scrollbar { display: none; }`}</style>
 
       {/* Banner nghệ sĩ */}
       <div
@@ -94,7 +87,7 @@ function AlbumArtists() {
       </div>
 
       {/* Danh sách bài hát phổ biến */}
-      <div className="container mt-4 pb-5">
+      <div className="container mt-4 pb-5" style={{ paddingBottom: "100px" }}>
         <h4 className="fw-bold mb-3">Phổ biến</h4>
         <div className="list-group list-group-flush">
           {songs.map((song, index) => (

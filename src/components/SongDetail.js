@@ -3,6 +3,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import { FaHeart, FaPlus, FaTimes, FaCheck } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
+import Footer from "./Footer";
 
 function SongDetail() {
     const { id } = useParams(); // ✅ Lấy id từ URL
@@ -154,16 +155,21 @@ function SongDetail() {
     return (
         <div
             style={{
-                position: "absolute",
-                inset: 0,
                 color: "#fff",
                 overflowY: "auto",
+                minHeight: "calc(100vh - 160px)", // ✅ cho phép cao hơn để cuộn
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+
+
                 background: `url(${bgImage}) center center / cover no-repeat`,
                 animation: "fadeIn 0.3s ease",
-                paddingBottom: 100,
+                paddingBottom: "100px",
                 backdropFilter: "blur(40px)",
             }}
         >
+
             {/* Overlay mờ */}
             <div
                 style={{
@@ -413,6 +419,7 @@ function SongDetail() {
                     {toast}
                 </div>
             )}
+            <Footer />
 
             <style>
                 {`
