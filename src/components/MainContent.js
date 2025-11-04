@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
-import { useNavigate } from "react-router-dom";
 
 function MainContent() {
   const [songs, setSongs] = useState([]);
   const [artists, setArtists] = useState([]);
-  const navigate = useNavigate(); // ✅ dùng để điều hướng
+  const navigate = useNavigate();
 
   useEffect(() => {
     axios.get("http://localhost:9000/songs").then((res) => setSongs(res.data));
@@ -29,7 +29,7 @@ function MainContent() {
         backgroundColor: "#121212",
         height: "calc(100vh - 90px)",
         overflowY: "auto",
-        paddingBottom: "120px", // ✅ chừa chỗ cho Footer & PlayerBar
+        paddingBottom: "120px",
       }}
     >
       {/* 🎵 SONG LIST */}
@@ -50,10 +50,10 @@ function MainContent() {
                   color: "#fff",
                 }}
               >
-                {/* Ảnh */}
+                {/* Ảnh bài hát */}
                 <div
                   className="position-relative"
-                  onClick={() => navigate(`/song/${song.id}`)} // ✅ click ảnh để mở chi tiết
+                  onClick={() => navigate(`/song/${song.id}`)} // mở chi tiết bài hát
                 >
                   <img
                     src={getSongImage(song)}
@@ -66,10 +66,10 @@ function MainContent() {
                     alt={song.title}
                   />
 
-                  {/* ✅ Nút play (không bị navigate khi click) */}
+                  {/* Nút play */}
                   <div
                     className="position-absolute"
-                    onClick={(e) => e.stopPropagation()} // ⛔ chặn click lan lên cha
+                    onClick={(e) => e.stopPropagation()} // ngăn chặn click lan lên ảnh
                     style={{
                       bottom: "8px",
                       right: "8px",
@@ -87,15 +87,26 @@ function MainContent() {
                   </div>
                 </div>
 
-                {/* Info text */}
+                {/* Thông tin bài hát */}
                 <div
                   className="card-body px-2 py-2"
-                  onClick={() => navigate(`/song/${song.id}`)} // ✅ click tiêu đề mở chi tiết
+                  onClick={() => navigate(`/song/${song.id}`)}
                 >
                   <h6 className="text-truncate mb-1">{song.title}</h6>
-                  <p className="small mb-1 text-truncate" style={{ color: "#ddd" }}>
+
+                  {/* 🔗 Bấm vào tên ca sĩ để mở trang nghệ sĩ */}
+                  <p
+                    className="small mb-1 text-truncate text-light"
+                    style={{ color: "#ddd", cursor: "pointer" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const artistId = song.artistId;
+                      if (artistId) navigate(`/artist/${artistId}`);
+                    }}
+                  >
                     {getArtistName(song.artistId)}
                   </p>
+
                   <p className="text-secondary small mb-0">
                     {formatDuration(song.duration)}
                   </p>
@@ -115,7 +126,8 @@ function MainContent() {
             <div
               key={artist.id}
               className="col text-center"
-              style={{ minWidth: "160px" }}
+              style={{ minWidth: "160px", cursor: "pointer" }}
+              onClick={() => navigate(`/artist/${artist.id}`)} // ✅ mở trang AlbumArtists
             >
               <div
                 className="card border-0 bg-dark h-100 p-3"

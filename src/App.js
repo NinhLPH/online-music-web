@@ -6,6 +6,8 @@ import { QueueProvider } from "./context/QueueContext";
 import LoginPage from "./page/Login";
 import SongDetail from "./components/SongDetail";
 import MainContent from "./components/MainContent";
+import AlbumArtists from "./components/AlbumArtists";
+
 
 function App() {
     return (
@@ -20,6 +22,8 @@ function App() {
                         <Route element={<MainLayout />}>
                             <Route path="/home" element={<MainContent />} />
                             <Route path="/song/:id" element={<SongDetail />} />
+                            <Route path="/artist/:id" element={<AlbumArtists />} />
+
                         </Route>
                     </Routes>
                 </QueueProvider>

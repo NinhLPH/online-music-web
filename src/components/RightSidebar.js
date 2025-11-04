@@ -241,34 +241,48 @@ export default function RightSidebar() {
 
                 {/* ✅ Giới thiệu nghệ sĩ */}
                 {artistInfo && (
-                    <div
-                        style={{
-                            background: "#121212",
-                            borderRadius: 10,
-                            padding: "14px 16px",
-                            width: "100%",
-                            marginTop: 10,
-                        }}
-                    >
-                        <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
-                        <img
-                            src={artistInfo.coverImg}
-                            alt={artistInfo.name}
-                            style={{
-                                width: "100%",
-                                borderRadius: 8,
-                                marginBottom: 10,
-                                objectFit: "cover",
-                            }}
-                        />
-                        <div style={{ fontWeight: 600, fontSize: "1rem", marginBottom: 6 }}>
-                            {artistInfo.name}
-                        </div>
-                        <div style={{ color: "#ccc", fontSize: "0.88rem", textAlign: "justify" }}>
-                            {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
-                        </div>
-                    </div>
-                )}
+    <div
+        style={{
+            background: "#121212",
+            borderRadius: 10,
+            padding: "14px 16px",
+            width: "100%",
+            marginTop: 10,
+        }}
+    >
+        <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
+
+        {/* Ảnh ca sĩ → bấm để mở trang AlbumArtists */}
+        <img
+            src={artistInfo.coverImg}
+            alt={artistInfo.name}
+            className="img-fluid rounded mb-3"
+            style={{ cursor: "pointer", transition: "0.3s" }}
+            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+        />
+
+        {/* Tên ca sĩ → bấm để mở trang AlbumArtists */}
+        <div
+            style={{
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                marginBottom: 6,
+                cursor: "pointer",
+                color: "#fff",
+            }}
+            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+        >
+            {artistInfo.name}
+        </div>
+
+        <div style={{ color: "#ccc", fontSize: "0.9rem", textAlign: "justify" }}>
+            {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
+        </div>
+    </div>
+)}
+
             </div>
         );
     }
