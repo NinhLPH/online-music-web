@@ -56,6 +56,8 @@ export default function RightSidebar() {
                     onConfirm: async () => {
                         const updatedFavorites = favorites.filter((id) => id !== song.id);
                         await axios.patch("http://localhost:9000/users/1", { favorites: updatedFavorites });
+                        
+                        window.dispatchEvent(new Event("favoritesUpdated"));
                         setConfirmBox(null);
                         showToast(`Đã xóa "${song.title}" khỏi yêu thích`);
                         window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
@@ -65,6 +67,7 @@ export default function RightSidebar() {
             } else {
                 const updatedFavorites = [...favorites, song.id];
                 await axios.patch("http://localhost:9000/users/1", { favorites: updatedFavorites });
+                window.dispatchEvent(new Event("favoritesUpdated"));
                 showToast(`Đã thêm "${song.title}" vào danh sách yêu thích`);
                 window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
             }
@@ -122,6 +125,7 @@ export default function RightSidebar() {
             await axios.patch(`http://localhost:9000/playlists/${playlistId}`, {
                 songIds: updatedSongs,
             });
+            window.dispatchEvent(new Event("playlistUpdated"));
 
             // Cập nhật lại state playlists tại chỗ
             setPlaylists((prev) =>
@@ -194,24 +198,16 @@ export default function RightSidebar() {
         if (!currentSong) return null;
         return (
             <div
-                className="text-white"
+                className="text-white d-flex flex-column align-items-center"
                 style={{
-                    position: "fixed",
-                    right: 0,
-                    top: "70px", // dưới header
-                    bottom: "90px", // trên player bar
-                    width: "16.66%", // tương đương col-md-2
-                    overflowY: "auto",
+                    width: "100%",
+                    height: "calc(100vh - 110px)",
                     backgroundColor: "#181818",
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
-                    boxSizing: "border-box",
-                    zIndex: 100,
+                    overflowY: "auto",
                 }}
             >
-
-
-
                 <h6 className="text-uppercase text-muted small mb-3">Đang phát</h6>
 
                 <img
@@ -249,47 +245,47 @@ export default function RightSidebar() {
 
                 {/* ✅ Giới thiệu nghệ sĩ */}
                 {artistInfo && (
-                    <div
-                        style={{
-                            background: "#121212",
-                            borderRadius: 10,
-                            padding: "14px 16px",
-                            width: "100%",
-                            marginTop: 10,
-                        }}
-                    >
-                        <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
+    <div
+        style={{
+            background: "#121212",
+            borderRadius: 10,
+            padding: "14px 16px",
+            width: "100%",
+            marginTop: 10,
+        }}
+    >
+        <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
 
-                        {/* Ảnh ca sĩ → bấm để mở trang AlbumArtists */}
-                        <img
-                            src={artistInfo.coverImg}
-                            alt={artistInfo.name}
-                            className="img-fluid rounded mb-3"
-                            style={{ cursor: "pointer", transition: "0.3s" }}
-                            onClick={() => navigate(`/artist/${artistInfo.id}`)}
-                            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-                            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-                        />
+        {/* Ảnh ca sĩ → bấm để mở trang AlbumArtists */}
+        <img
+            src={artistInfo.coverImg}
+            alt={artistInfo.name}
+            className="img-fluid rounded mb-3"
+            style={{ cursor: "pointer", transition: "0.3s" }}
+            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+        />
 
-                        {/* Tên ca sĩ → bấm để mở trang AlbumArtists */}
-                        <div
-                            style={{
-                                fontWeight: 600,
-                                fontSize: "1.1rem",
-                                marginBottom: 6,
-                                cursor: "pointer",
-                                color: "#fff",
-                            }}
-                            onClick={() => navigate(`/artist/${artistInfo.id}`)}
-                        >
-                            {artistInfo.name}
-                        </div>
+        {/* Tên ca sĩ → bấm để mở trang AlbumArtists */}
+        <div
+            style={{
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                marginBottom: 6,
+                cursor: "pointer",
+                color: "#fff",
+            }}
+            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+        >
+            {artistInfo.name}
+        </div>
 
-                        <div style={{ color: "#ccc", fontSize: "0.9rem", textAlign: "justify" }}>
-                            {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
-                        </div>
-                    </div>
-                )}
+        <div style={{ color: "#ccc", fontSize: "0.9rem", textAlign: "justify" }}>
+            {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
+        </div>
+    </div>
+)}
 
             </div>
         );
@@ -305,22 +301,15 @@ export default function RightSidebar() {
             <div
                 className="text-white"
                 style={{
-                    position: "fixed",
-                    right: 0,
-                    top: "70px", // dưới header
-                    bottom: "90px", // trên player bar
-                    width: "16.66%", // tương đương col-md-2
+                    width: "100%",
+                    height: "calc(100vh - 110px)",
                     overflowY: "auto",
                     backgroundColor: "#181818",
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
-                    boxSizing: "border-box",
-                    zIndex: 100,
+                    paddingBottom: "40px",
                 }}
             >
-
-
-
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h5 className="fw-bold">Danh sách phát</h5>
                     <button
