@@ -15,6 +15,8 @@ import {
 } from "react-icons/fa";
 import { useQueue } from "../context/QueueContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 
 const PlayerBar = () => {
     const [isPlaying, setIsPlaying] = useState(false);
@@ -27,6 +29,8 @@ const PlayerBar = () => {
     const audioRef = useRef(null);
     const hasFetched = useRef(false);
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
+
 
     const {
         toggleQueue,
@@ -91,14 +95,14 @@ const PlayerBar = () => {
     useEffect(() => {
         const fetchFavorites = async () => {
             try {
-                const res = await axios.get("http://localhost:9000/users/1");
+                const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
                 setFavorites(res.data.favorites || []);
             } catch (err) {
                 console.error("Lỗi tải danh sách yêu thích:", err);
             }
         };
         fetchFavorites();
-    }, []);
+    }, [currentUser]);
 
     // 🧩 Đồng bộ yêu thích giữa các component
     useEffect(() => {
@@ -227,23 +231,25 @@ const PlayerBar = () => {
     // ❤️ Toggle yêu thích
     const toggleFavorite = async () => {
         try {
-            const res = await axios.get("http://localhost:9000/users/1");
+            const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
             const user = res.data;
-            const isFav = user.favorites?.includes(currentSong.id);
+
+            // 🔹 Ép kiểu toàn bộ ID trong favorites về number
+            const normalizedFavs = (user.favorites || []).map(Number);
+            const songId = Number(currentSong.id);
+            const isFav = normalizedFavs.includes(songId);
 
             if (isFav) {
                 setConfirmBox({
                     message: `Bạn có chắc muốn xóa "${currentSong.title}" khỏi yêu thích?`,
                     onConfirm: async () => {
-                        const updated = user.favorites.filter(
-                            (id) => id !== currentSong.id
-                        );
-                        await axios.patch("http://localhost:9000/users/1", {
+                        const updated = normalizedFavs.filter((id) => id !== songId);
+                        await axios.patch(`http://localhost:9000/users/${currentUser.id}`, {
                             favorites: updated,
                         });
-                        setFavorites(updated);
+                        setFavorites(updated.map(Number)); // ✅ Ép kiểu ở đây
                         window.dispatchEvent(
-                            new CustomEvent("favoritesUpdated", { detail: updated })
+                            new CustomEvent("favoritesUpdated", { detail: updated.map(Number) })
                         );
                         setConfirmBox(null);
                         showToast("Đã xóa khỏi yêu thích");
@@ -251,13 +257,13 @@ const PlayerBar = () => {
                     onCancel: () => setConfirmBox(null),
                 });
             } else {
-                const updated = [...(user.favorites || []), currentSong.id];
-                await axios.patch("http://localhost:9000/users/1", {
+                const updated = [...normalizedFavs, songId];
+                await axios.patch(`http://localhost:9000/users/${currentUser.id}`, {
                     favorites: updated,
                 });
-                setFavorites(updated);
+                setFavorites(updated.map(Number)); // ✅ Ép kiểu ở đây
                 window.dispatchEvent(
-                    new CustomEvent("favoritesUpdated", { detail: updated })
+                    new CustomEvent("favoritesUpdated", { detail: updated.map(Number) })
                 );
                 showToast(`Đã thêm "${currentSong.title}" vào yêu thích`);
             }
@@ -266,6 +272,7 @@ const PlayerBar = () => {
             showToast("Không thể cập nhật danh sách yêu thích");
         }
     };
+
 
     const togglePlayPause = () => {
         const audio = audioRef.current;
@@ -289,7 +296,8 @@ const PlayerBar = () => {
 
     if (!currentSong) return null;
 
-    const isFavorite = favorites.includes(currentSong.id);
+    const isFavorite = favorites.map(Number).includes(Number(currentSong.id));
+
     const iconBtn = {
         background: "none",
         border: "none",
@@ -303,6 +311,8 @@ const PlayerBar = () => {
 
     return (
         <>
+            if (!currentUser) return null;
+
             {/* Player UI */}
             <div
                 style={{

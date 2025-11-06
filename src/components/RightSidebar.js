@@ -4,6 +4,8 @@ import { useQueue } from "../context/QueueContext";
 import { FaEllipsisH, FaTimes } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 
 export default function RightSidebar() {
     const {
@@ -22,6 +24,7 @@ export default function RightSidebar() {
     const [confirmBox, setConfirmBox] = useState(null);
     const [artistInfo, setArtistInfo] = useState(null);
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
 
     // 🔥 Lấy thông tin nghệ sĩ khi bài hát đổi
     useEffect(() => {
@@ -45,7 +48,8 @@ export default function RightSidebar() {
     // ❤️ Thêm / Xóa khỏi yêu thích
     const handleAddToFavorites = async (song) => {
         try {
-            const res = await axios.get("http://localhost:9000/users/1");
+            const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
+
             const user = res.data;
             const favorites = user.favorites || [];
             const isFav = favorites.includes(song.id);
@@ -55,7 +59,8 @@ export default function RightSidebar() {
                     message: `Bạn có chắc muốn xóa "${song.title}" khỏi danh sách yêu thích?`,
                     onConfirm: async () => {
                         const updatedFavorites = favorites.filter((id) => id !== song.id);
-                        await axios.patch("http://localhost:9000/users/1", { favorites: updatedFavorites });
+                        await axios.patch(`http://localhost:9000/users/${currentUser.id}`, { favorites: updatedFavorites });
+
                         setConfirmBox(null);
                         showToast(`Đã xóa "${song.title}" khỏi yêu thích`);
                         window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
@@ -64,7 +69,8 @@ export default function RightSidebar() {
                 });
             } else {
                 const updatedFavorites = [...favorites, song.id];
-                await axios.patch("http://localhost:9000/users/1", { favorites: updatedFavorites });
+                await axios.patch(`http://localhost:9000/users/${currentUser.id}`, { favorites: updatedFavorites });
+
                 showToast(`Đã thêm "${song.title}" vào danh sách yêu thích`);
                 window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
             }
@@ -83,14 +89,15 @@ export default function RightSidebar() {
     useEffect(() => {
         const fetchPlaylists = async () => {
             try {
-                const res = await axios.get("http://localhost:9000/playlists?userId=1");
+                const res = await axios.get(`http://localhost:9000/playlists?userId=${currentUser.id}`);
+
                 setPlaylists(res.data || []);
             } catch (err) {
                 console.error("Lỗi tải playlist:", err);
             }
         };
         fetchPlaylists();
-    }, []);
+    }, [currentUser]);
 
     // Mở popup chọn playlist
     const handleAddToPlaylist = (song) => {

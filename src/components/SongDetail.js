@@ -4,9 +4,12 @@ import { useParams } from "react-router-dom";
 import { FaHeart, FaPlus, FaTimes, FaCheck } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
+import { useAuth } from "../context/AuthContext"; // ✅ dùng context
 
 function SongDetail() {
-    const { id } = useParams(); // ✅ Lấy id từ URL
+    const { id } = useParams();
+    const { currentUser } = useAuth(); // ✅ lấy user hiện tại
+
     const [song, setSong] = useState(null);
     const [artist, setArtist] = useState(null);
     const [album, setAlbum] = useState(null);
@@ -18,49 +21,56 @@ function SongDetail() {
     const [playlists, setPlaylists] = useState([]);
     const [inAnyPlaylist, setInAnyPlaylist] = useState(false);
 
-    // ✅ Tải dữ liệu bài hát + thông tin liên quan
+    // ✅ Tải dữ liệu bài hát + liên quan
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [songRes, artistRes, albumRes, userRes, playlistsRes] =
-                    await Promise.all([
-                        axios.get(`http://localhost:9000/songs/${id}`),
-                        axios.get(`http://localhost:9000/artists?songId=${id}`),
-                        axios.get(`http://localhost:9000/albums?songId=${id}`),
-                        axios.get(`http://localhost:9000/users/1`),
-                        axios.get(`http://localhost:9000/playlists?userId=1`),
-                    ]);
+                const [songRes, artistRes, albumRes] = await Promise.all([
+                    axios.get(`http://localhost:9000/songs/${id}`),
+                    axios.get(`http://localhost:9000/artists?songId=${id}`),
+                    axios.get(`http://localhost:9000/albums?songId=${id}`),
+                ]);
 
                 const currentSong = songRes.data;
                 setSong(currentSong);
-
-                // Một số API có thể trả về mảng, xử lý linh hoạt
                 setArtist(artistRes.data[0] || artistRes.data || null);
                 setAlbum(albumRes.data[0] || albumRes.data || null);
                 setLyrics(currentSong.lyrics || "Chưa có lời bài hát cho bài này.");
-                setIsFav(userRes.data.favorites?.includes(Number(id)));
-                setPlaylists(playlistsRes.data);
 
-                const isInPlaylist = playlistsRes.data.some((pl) =>
-                    pl.songIds.includes(Number(id))
-                );
-                setInAnyPlaylist(isInPlaylist);
+                // Nếu có user đăng nhập thì tải thêm thông tin
+                if (currentUser) {
+                    const [userRes, playlistsRes] = await Promise.all([
+                        axios.get(`http://localhost:9000/users/${currentUser.id}`),
+                        axios.get(
+                            `http://localhost:9000/playlists?userId=${currentUser.id}`
+                        ),
+                    ]);
+
+                    setIsFav(userRes.data.favorites?.includes(Number(id)));
+                    setPlaylists(playlistsRes.data);
+
+                    const isInPlaylist = playlistsRes.data.some((pl) =>
+                        pl.songIds.includes(Number(id))
+                    );
+                    setInAnyPlaylist(isInPlaylist);
+                }
             } catch (err) {
                 console.error("Lỗi tải dữ liệu bài hát:", err);
             }
         };
 
         fetchData();
-    }, [id]);
+    }, [id, currentUser]);
 
-    // ✅ Lắng nghe thay đổi danh sách yêu thích
+    // ✅ Lắng nghe thay đổi favorites toàn cục
     useEffect(() => {
         const handleFavoritesUpdated = (e) => {
             const updated = e.detail;
             setIsFav(updated.includes(Number(id)));
         };
         window.addEventListener("favoritesUpdated", handleFavoritesUpdated);
-        return () => window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
+        return () =>
+            window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
     }, [id]);
 
     const showToast = (message) => {
@@ -68,9 +78,17 @@ function SongDetail() {
         setTimeout(() => setToast(null), 2000);
     };
 
+    // ✅ Thêm / xóa yêu thích theo currentUser
     const toggleFavorite = async () => {
+        if (!currentUser) {
+            showToast("Vui lòng đăng nhập để dùng tính năng này");
+            return;
+        }
+
         try {
-            const res = await axios.get(`http://localhost:9000/users/1`);
+            const res = await axios.get(
+                `http://localhost:9000/users/${currentUser.id}`
+            );
             const user = res.data;
             const favorites = user.favorites || [];
             let updatedFavorites;
@@ -85,7 +103,7 @@ function SongDetail() {
                 showToast(`Đã thêm "${song?.title}" vào yêu thích`);
             }
 
-            await axios.patch(`http://localhost:9000/users/1`, {
+            await axios.patch(`http://localhost:9000/users/${currentUser.id}`, {
                 favorites: updatedFavorites,
             });
 
@@ -98,9 +116,17 @@ function SongDetail() {
         }
     };
 
+    // ✅ Hiện popup playlist
     const openPlaylistPopup = async () => {
+        if (!currentUser) {
+            showToast("Vui lòng đăng nhập để dùng tính năng này");
+            return;
+        }
+
         try {
-            const res = await axios.get(`http://localhost:9000/playlists?userId=1`);
+            const res = await axios.get(
+                `http://localhost:9000/playlists?userId=${currentUser.id}`
+            );
             setPlaylists(res.data);
             setShowPlaylistPopup(true);
         } catch (err) {
@@ -108,9 +134,12 @@ function SongDetail() {
         }
     };
 
+    // ✅ Thêm / xóa bài hát khỏi playlist
     const toggleInPlaylist = async (playlistId) => {
         try {
-            const res = await axios.get(`http://localhost:9000/playlists/${playlistId}`);
+            const res = await axios.get(
+                `http://localhost:9000/playlists/${playlistId}`
+            );
             const playlist = res.data;
 
             let updatedSongs;
@@ -128,7 +157,9 @@ function SongDetail() {
                 songIds: updatedSongs,
             });
 
-            const playlistsRes = await axios.get(`http://localhost:9000/playlists?userId=1`);
+            const playlistsRes = await axios.get(
+                `http://localhost:9000/playlists?userId=${currentUser.id}`
+            );
             setPlaylists(playlistsRes.data);
 
             const isInPlaylist = playlistsRes.data.some((pl) =>
@@ -157,19 +188,16 @@ function SongDetail() {
             style={{
                 color: "#fff",
                 overflowY: "auto",
-                minHeight: "calc(100vh - 160px)", // ✅ cho phép cao hơn để cuộn
+                minHeight: "calc(100vh - 160px)",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-
-
                 background: `url(${bgImage}) center center / cover no-repeat`,
                 animation: "fadeIn 0.3s ease",
                 paddingBottom: "100px",
                 backdropFilter: "blur(40px)",
             }}
         >
-
             {/* Overlay mờ */}
             <div
                 style={{
@@ -247,40 +275,46 @@ function SongDetail() {
                     <PlayPauseButton song={song} />
                 </div>
 
-                <button
-                    onClick={toggleFavorite}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        color: isFav ? "#1db954" : "#fff",
-                        fontSize: 26,
-                        cursor: "pointer",
-                    }}
-                    title={isFav ? "Đã yêu thích" : "Thêm vào yêu thích"}
-                >
-                    <FaHeart />
-                </button>
+                {/* Chỉ hiển thị khi user đã login */}
+                {currentUser && (
+                    <>
+                        <button
+                            onClick={toggleFavorite}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                color: isFav ? "#1db954" : "#fff",
+                                fontSize: 26,
+                                cursor: "pointer",
+                            }}
+                            title={isFav ? "Đã yêu thích" : "Thêm vào yêu thích"}
+                        >
+                            <FaHeart />
+                        </button>
 
-                {/* Nút thêm vào playlist */}
-                <button
-                    onClick={openPlaylistPopup}
-                    style={{
-                        background: "none",
-                        border: "none",
-                        color: inAnyPlaylist ? "#1db954" : "#fff",
-                        fontSize: 22,
-                        cursor: "pointer",
-                        transition: "color 0.3s ease",
-                    }}
-                    title={
-                        inAnyPlaylist ? "Bài hát đã nằm trong playlist" : "Thêm vào playlist"
-                    }
-                >
-                    {inAnyPlaylist ? <FaCheck /> : <FaPlus />}
-                </button>
+                        <button
+                            onClick={openPlaylistPopup}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                color: inAnyPlaylist ? "#1db954" : "#fff",
+                                fontSize: 22,
+                                cursor: "pointer",
+                                transition: "color 0.3s ease",
+                            }}
+                            title={
+                                inAnyPlaylist
+                                    ? "Bài hát đã nằm trong playlist"
+                                    : "Thêm vào playlist"
+                            }
+                        >
+                            {inAnyPlaylist ? <FaCheck /> : <FaPlus />}
+                        </button>
+                    </>
+                )}
             </div>
 
-            {/* Nút hiện lời bài hát */}
+            {/* Nút hiện lời */}
             <div style={{ padding: "0 80px", marginTop: 40 }}>
                 <button
                     onClick={() => setShowLyrics(!showLyrics)}
@@ -300,7 +334,6 @@ function SongDetail() {
                 </button>
             </div>
 
-            {/* Lời bài hát */}
             {showLyrics && (
                 <div
                     style={{
@@ -389,7 +422,9 @@ function SongDetail() {
                                     }
                                 >
                                     <span>{pl.name}</span>
-                                    {pl.songIds.includes(Number(id)) && <FaCheck color="#1db954" />}
+                                    {pl.songIds.includes(Number(id)) && (
+                                        <FaCheck color="#1db954" />
+                                    )}
                                 </div>
                             ))
                         ) : (
