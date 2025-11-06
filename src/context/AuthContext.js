@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
                 
                 localStorage.setItem('music-app-user', JSON.stringify(userToStore));
                 setCurrentUser(userToStore);
-                return true;
+                return userToStore;
             } else {
                 return false;
             }

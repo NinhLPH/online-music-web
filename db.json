@@ -28,6 +28,12 @@
         "status": "active",
         "expiresOn": null
       }
+    },
+    {
+      "id": "3",
+      "username": "admin",
+      "password": "admin",
+      "avatar": "https://cdn-icons-png.flaticon.com/512/3781/3781986.png"
     }
   ],
   "artists": [

@@ -17,10 +17,18 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const success = await login(username, password);
+    const user = await login(username, password);
     setLoading(false);
-    if (success) navigate(from, { replace: true });
-    else setError('Tên đăng nhập hoặc mật khẩu không đúng.');
+
+    if (user) {
+        if (user.username === 'admin') {
+            navigate('/admin', { replace: true });
+        } else {
+            navigate(from, { replace: true });
+        }
+    } else {
+        setError('Tên đăng nhập hoặc mật khẩu không đúng.');
+    }
   };
 
   return (
@@ -68,9 +76,6 @@ export default function LoginPage() {
                 {loading ? 'Đang xử lý...' : 'Đăng nhập'}
               </button>
             </form>
-            <p className="mt-3 text-muted small text-center">
-              (Dùng: <b>user1</b>/<b>user1</b> hoặc <b>user2</b>/<b>user2</b>)
-            </p>
           </div>
         </div>
       </div>

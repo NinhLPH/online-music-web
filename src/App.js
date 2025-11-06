@@ -7,6 +7,8 @@ import LoginPage from "./page/Login";
 import SongDetail from "./components/SongDetail";
 import MainContent from "./components/MainContent";
 import AlbumArtists from "./components/AlbumArtists";
+import AdminDashboard from "./page/AdminDashboard";
+import AdminRoute from "./components/AdminRoute";
 
 
 function App() {
@@ -25,6 +27,13 @@ function App() {
                             <Route path="/artist/:id" element={<AlbumArtists />} />
 
                         </Route>
+
+                        <Route path="/admin" element={
+                                <AdminRoute>
+                                    <AdminDashboard />
+                                </AdminRoute>
+                            }
+                        />
                     </Routes>
                 </QueueProvider>
             </BrowserRouter>
