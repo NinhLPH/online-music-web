@@ -49,36 +49,51 @@ export default function RightSidebar() {
     const handleAddToFavorites = async (song) => {
         try {
             const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
-
             const user = res.data;
-            const favorites = user.favorites || [];
-            const isFav = favorites.includes(song.id);
+
+            // Ép kiểu về number để tránh lỗi chuỗi/số
+            const favorites = (user.favorites || []).map(Number);
+            const songIdNum = Number(song.id);
+            const isFav = favorites.includes(songIdNum);
 
             if (isFav) {
                 setConfirmBox({
                     message: `Bạn có chắc muốn xóa "${song.title}" khỏi danh sách yêu thích?`,
                     onConfirm: async () => {
-                        const updatedFavorites = favorites.filter((id) => id !== song.id);
-                        await axios.patch(`http://localhost:9000/users/${currentUser.id}`, { favorites: updatedFavorites });
+                        const updatedFavorites = favorites.filter((id) => id !== songIdNum);
+
+                        // Gửi mảng toàn number lên server
+                        await axios.patch(`http://localhost:9000/users/${currentUser.id}`, {
+                            favorites: updatedFavorites,
+                        });
 
                         setConfirmBox(null);
                         showToast(`Đã xóa "${song.title}" khỏi yêu thích`);
-                        window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
+                        window.dispatchEvent(
+                            new CustomEvent("favoritesUpdated", { detail: updatedFavorites })
+                        );
                     },
                     onCancel: () => setConfirmBox(null),
                 });
             } else {
-                const updatedFavorites = [...favorites, song.id];
-                await axios.patch(`http://localhost:9000/users/${currentUser.id}`, { favorites: updatedFavorites });
+                const updatedFavorites = [...favorites, songIdNum];
+
+                // Gửi mảng toàn number lên server
+                await axios.patch(`http://localhost:9000/users/${currentUser.id}`, {
+                    favorites: updatedFavorites,
+                });
 
                 showToast(`Đã thêm "${song.title}" vào danh sách yêu thích`);
-                window.dispatchEvent(new CustomEvent("favoritesUpdated", { detail: updatedFavorites }));
+                window.dispatchEvent(
+                    new CustomEvent("favoritesUpdated", { detail: updatedFavorites })
+                );
             }
         } catch (err) {
             console.error("Lỗi khi cập nhật yêu thích:", err);
             showToast("Không thể cập nhật yêu thích", "error");
         }
     };
+
 
     // 🎵 Thêm vào playlist (chọn playlist hoặc tạo mới)
     const [playlistSelector, setPlaylistSelector] = useState(null);
@@ -90,8 +105,12 @@ export default function RightSidebar() {
         const fetchPlaylists = async () => {
             try {
                 const res = await axios.get(`http://localhost:9000/playlists?userId=${currentUser.id}`);
+                const normalized = (res.data || []).map(pl => ({
+                    ...pl,
+                    songIds: (pl.songIds || []).map(Number)
+                }));
+                setPlaylists(normalized);
 
-                setPlaylists(res.data || []);
             } catch (err) {
                 console.error("Lỗi tải playlist:", err);
             }
@@ -110,18 +129,20 @@ export default function RightSidebar() {
             const res = await axios.get(`http://localhost:9000/playlists/${playlistId}`);
             const playlist = res.data;
 
-            const hasSong = playlist.songIds?.includes(playlistSelector.id);
+            // Ép kiểu về number để tránh lỗi so sánh sai kiểu
+            const songIds = (playlist.songIds || []).map(Number);
+            const songIdNum = Number(playlistSelector.id);
+
+            const hasSong = songIds.includes(songIdNum);
             let updatedSongs;
 
             if (hasSong) {
                 // ❌ Nếu đã có → xóa khỏi playlist
-                updatedSongs = playlist.songIds.filter((id) => id !== playlistSelector.id);
+                updatedSongs = songIds.filter((id) => id !== songIdNum);
                 showToast(`Đã xóa "${playlistSelector.title}" khỏi "${playlist.name}"`);
             } else {
                 // ✅ Nếu chưa có → thêm vào playlist
-                updatedSongs = [
-                    ...new Set([...(playlist.songIds || []), playlistSelector.id]),
-                ];
+                updatedSongs = [...new Set([...songIds, songIdNum])];
                 showToast(`Đã thêm "${playlistSelector.title}" vào "${playlist.name}"`);
             }
 
@@ -142,53 +163,47 @@ export default function RightSidebar() {
         }
     };
 
-    // 🆕 Tạo playlist mới rồi thêm bài
-    // 🆕 Tạo playlist mới rồi thêm bài
     const createNewPlaylist = async () => {
         if (!newPlaylistName.trim()) {
             showToast("Vui lòng nhập tên playlist", "error");
             return;
         }
 
-        // ❌ Kiểm tra trùng tên playlist (không phân biệt hoa/thường)
-        const exists = playlists.some(
-            (pl) => pl.name.toLowerCase() === newPlaylistName.trim().toLowerCase()
-        );
-        if (exists) {
-            showToast("Tên playlist đã tồn tại!", "error");
-            return;
-        }
-
         try {
-            // 🧩 Chuẩn hóa dữ liệu playlist (giữ đúng thứ tự key)
-            const orderedPlaylist = {
+            // Lấy tất cả playlist
+            const resAll = await axios.get(`http://localhost:9000/playlists`);
+            const allPlaylists = resAll.data;
+
+            // Lấy danh sách id dưới dạng chuỗi
+            const numericIds = allPlaylists
+                .map((p) => parseInt(p.id))
+                .filter((id) => !isNaN(id));
+
+            const maxId = numericIds.length > 0 ? Math.max(...numericIds) : 0;
+            const newId = String(maxId + 1); // ✅ ép thành chuỗi
+
+            const newPlaylist = {
+                id: newId, // 👈 ID là string
                 name: newPlaylistName.trim(),
-                userId: 1,
+                userId: currentUser.id,
                 description: "Playlist mới tạo",
                 coverImg: `https://picsum.photos/seed/${encodeURIComponent(
                     newPlaylistName
                 )}/300/300`,
-                songIds: [playlistSelector.id],
+                songIds: [Number(playlistSelector.id)], // songIds vẫn là number
             };
 
-            // ✅ Gửi 1 POST duy nhất, JSON Server sẽ tự tạo id ở đầu
-            const res = await axios.post(
-                "http://localhost:9000/playlists",
-                orderedPlaylist
-            );
-            const savedPlaylist = res.data;
+            await axios.post("http://localhost:9000/playlists", newPlaylist);
 
-            // 🟢 Cập nhật lại state playlists
-            setPlaylists([...playlists, savedPlaylist]);
+            setPlaylists((prev) => [...prev, newPlaylist]);
+
+            showToast(`Đã tạo playlist "${newPlaylist.name}" và thêm bài hát thành công`);
             setNewPlaylistName("");
-            setPlaylistSelector(null);
-            showToast(`Đã tạo playlist "${savedPlaylist.name}" và thêm bài hát`);
         } catch (err) {
-            console.error("Lỗi tạo playlist mới:", err);
-            showToast("Không thể tạo playlist mới", "error");
+            console.error("Lỗi khi tạo playlist mới:", err);
+            showToast("Không thể tạo playlist", "error");
         }
     };
-
 
     // 🔜 Thêm vào hàng chờ
     const handleAddToQueue = (song) => {
@@ -456,7 +471,8 @@ export default function RightSidebar() {
                         {/* Danh sách playlist */}
                         {playlists.length > 0 ? (
                             playlists.map((pl) => {
-                                const isInPlaylist = pl.songIds?.includes(playlistSelector.id);
+                                const isInPlaylist = (pl.songIds || []).includes(Number(playlistSelector.id));
+
                                 return (
                                     <button
                                         key={pl.id}

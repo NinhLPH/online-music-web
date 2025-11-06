@@ -1,69 +1,142 @@
-import React, { useState } from "react";
-import { FaBell, FaCog, FaUser, FaSearch } from "react-icons/fa";
+import React, { useState, useEffect, useRef } from "react";
+import { FaBell, FaCog, FaUser, FaSearch, FaHistory } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 
-/**
- * Header có ô tìm kiếm bài hát theo từ khóa.
- * Kết quả được gửi đến MainContent qua CustomEvent("searchSongs").
- */
 export default function Header() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+
   const [keyword, setKeyword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchHistory, setSearchHistory] = useState(
+    JSON.parse(localStorage.getItem("searchHistory")) || []
+  );
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate("/home");
   };
 
-  // 🔍 Hàm tìm kiếm
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const query = keyword.trim();
+  // ✅ Lưu & phát event sang MainContent
+  const triggerSearch = async (query, customResult = null) => {
     if (!query) return;
 
-    setIsLoading(true);
-    try {
-      // Lấy dữ liệu từ cả songs và artists
-      const [songsRes, artistsRes] = await Promise.all([
-        axios.get("http://localhost:9000/songs"),
-        axios.get("http://localhost:9000/artists"),
-      ]);
+    const newHistory = [
+      query,
+      ...searchHistory.filter((item) => item !== query),
+    ].slice(0, 5);
 
-      const allSongs = songsRes.data || [];
-      const allArtists = artistsRes.data || [];
+    setSearchHistory(newHistory);
+    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
 
-      // Lọc kết quả
-      const matchedSongs = allSongs.filter(
-        (s) =>
-          s.title.toLowerCase().includes(query.toLowerCase()) ||
-          s.description?.toLowerCase().includes(query.toLowerCase())
-      );
+    if (!customResult) {
+      setIsLoading(true);
+      try {
+        const [songsRes, artistsRes] = await Promise.all([
+          axios.get("http://localhost:9000/songs"),
+          axios.get("http://localhost:9000/artists"),
+        ]);
 
-      const matchedArtists = allArtists.filter((a) =>
-        a.name.toLowerCase().includes(query.toLowerCase())
-      );
+        const q = query.toLowerCase();
+        const matchedSongs = songsRes.data.filter(
+          (s) =>
+            s.title.toLowerCase().includes(q) ||
+            s.description?.toLowerCase().includes(q)
+        );
 
-      // 🔄 Gửi kết quả sang MainContent
-      window.dispatchEvent(
-        new CustomEvent("searchSongs", {
-          detail: {
-            keyword: query,
-            songs: matchedSongs,
-            artists: matchedArtists,
-          },
-        })
-      );
-    } catch (err) {
-      console.error("Lỗi khi tìm kiếm:", err);
-    } finally {
+        const matchedArtists = artistsRes.data.filter((a) =>
+          a.name.toLowerCase().includes(q)
+        );
+
+        customResult = { songs: matchedSongs, artists: matchedArtists };
+      } catch (err) {
+        console.error(err);
+      }
       setIsLoading(false);
     }
+
+    window.dispatchEvent(
+      new CustomEvent("searchSongs", {
+        detail: {
+          keyword: query,
+          songs: customResult?.songs || [],
+          artists: customResult?.artists || [],
+        },
+      })
+    );
+
+
+    setShowSuggestions(false);
   };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    triggerSearch(keyword);
+  };
+
+  // ✅ Gợi ý khi nhập
+  const handleInputChange = async (e) => {
+    const text = e.target.value;
+    setKeyword(text);
+
+    if (!text.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const q = text.toLowerCase();
+
+    const [songsRes, artistsRes, albumsRes] = await Promise.all([
+      axios.get("http://localhost:9000/songs"),
+      axios.get("http://localhost:9000/artists"),
+      axios.get("http://localhost:9000/albums"),
+    ]);
+
+    const matchedSongs = songsRes.data
+      .filter((s) => s.title.toLowerCase().includes(q))
+      .map((s) => ({ type: "song", label: s.title, data: s }));
+
+    const matchedArtists = artistsRes.data
+      .filter((a) => a.name.toLowerCase().includes(q))
+      .map((a) => ({ type: "artist", label: a.name, data: a }));
+
+    const matchedAlbums = albumsRes.data
+      .filter((al) => al.title.toLowerCase().includes(q))
+      .map((al) => ({ type: "album", label: al.title, data: al }));
+
+    setSuggestions([...matchedSongs, ...matchedArtists, ...matchedAlbums]);
+    setShowSuggestions(true);
+  };
+
+  const handleSuggestionClick = (item) => {
+    setKeyword(item.label);
+
+    const result = {
+      [`${item.type}s`]: [item.data],
+    };
+
+    triggerSearch(item.label, result);
+  };
+
+  // ✅ Click ngoài dropdown → đóng
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="navbar navbar-expand-lg bg-dark navbar-dark px-3">
@@ -88,45 +161,88 @@ export default function Header() {
         {/* Menu */}
         <ul className="navbar-nav d-flex flex-row mx-3">
           <li className="nav-item mx-2">
-            <Link to="/home" className="nav-link text-white">
-              Home
-            </Link>
+            <Link to="/home" className="nav-link text-white">Home</Link>
           </li>
           <li className="nav-item mx-2">
-            <a href="#" className="nav-link text-white">
-              Library
-            </a>
+            <span className="nav-link text-white" style={{ cursor: "pointer" }}>Library</span>
           </li>
           <li className="nav-item mx-2">
-            <a href="#" className="nav-link text-white">
-              Favourite
-            </a>
+            <span className="nav-link text-white" style={{ cursor: "pointer" }}>Favourite</span>
           </li>
         </ul>
 
         {/* Search */}
-        <form
-          onSubmit={handleSearch}
-          className="d-flex align-items-center flex-grow-1 mx-3"
-          style={{ maxWidth: "600px" }}
-        >
-          <div className="input-group">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Tìm kiếm bài hát hoặc nghệ sĩ..."
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-            />
-            <button
-              className="btn btn-success"
-              type="submit"
-              disabled={isLoading}
+        <div className="position-relative flex-grow-1 mx-3" ref={dropdownRef}>
+          <form
+            onSubmit={handleSearch}
+            className="d-flex align-items-center"
+            style={{ maxWidth: "600px" }}
+          >
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Tìm kiếm bài hát, nghệ sĩ, album..."
+                value={keyword}
+                onChange={handleInputChange}
+                onFocus={() => keyword && setShowSuggestions(true)}
+              />
+              <button className="btn btn-success" type="submit" disabled={isLoading}>
+                <FaSearch />
+              </button>
+            </div>
+          </form>
+
+          {/* ✅ Suggestions UI */}
+          {showSuggestions && (
+            <div
+              className="bg-dark text-white p-2 mt-1 rounded"
+              style={{
+                position: "absolute",
+                width: "100%",
+                maxHeight: "250px",
+                overflowY: "auto",
+                zIndex: 99,
+                border: "1px solid #444",
+              }}
             >
-              <FaSearch />
-            </button>
-          </div>
-        </form>
+              {suggestions.length > 0 ? (
+                suggestions.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="py-2 px-2 suggestion-item"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleSuggestionClick(item)}
+                  >
+                    🔍 {item.label} <small>({item.type})</small>
+                  </div>
+                ))
+              ) : (
+                <p className="text-secondary px-2 m-0">Không có kết quả...</p>
+              )}
+
+              {/* ✅ Search History */}
+              {searchHistory.length > 0 && (
+                <div className="mt-2 border-top pt-2">
+                  <strong>
+                    <FaHistory className="me-2" />
+                    Lịch sử tìm kiếm:
+                  </strong>
+                  {searchHistory.map((h, i) => (
+                    <div
+                      key={i}
+                      className="py-1 ps-2 text-secondary"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => triggerSearch(h)}
+                    >
+                      🕒 {h}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Icons */}
         <div className="d-flex align-items-center text-white">
@@ -154,11 +270,9 @@ export default function Header() {
               </button>
             </div>
           ) : (
-            <div>
-              <Link to="/login" className="btn btn-light">
-                Đăng nhập
-              </Link>
-            </div>
+            <Link to="/login" className="btn btn-light">
+              Đăng nhập
+            </Link>
           )}
         </div>
       </div>

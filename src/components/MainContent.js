@@ -32,6 +32,7 @@ function MainContent() {
 
   const getSongImage = (song) => `https://picsum.photos/seed/${song.id}/300`;
 
+
   const formatDuration = (seconds) => Math.round(seconds / 60) + " phút";
 
   return (
@@ -51,7 +52,7 @@ function MainContent() {
           </h4>
 
           {/* Bài hát tìm thấy */}
-          {searchResults.songs.length > 0 && (
+          {searchResults.songs?.length > 0 && (
             <>
               <h5 className="text-light mt-3 mb-2">Bài hát</h5>
               <div className="row row-cols-5 g-3">
@@ -86,7 +87,7 @@ function MainContent() {
           )}
 
           {/* Nghệ sĩ tìm thấy */}
-          {searchResults.artists.length > 0 && (
+          {searchResults.artists?.length > 0 && (
             <>
               <h5 className="text-light mt-4 mb-2">Nghệ sĩ</h5>
               <div className="row row-cols-5 g-3">
@@ -96,6 +97,7 @@ function MainContent() {
                     className="col text-center"
                     style={{ cursor: "pointer" }}
                     onClick={() => navigate(`/artist/${artist.id}`)}
+
                   >
                     <div
                       className="card border-0 bg-dark h-100 p-3"
@@ -122,10 +124,10 @@ function MainContent() {
           )}
 
           {/* Không có kết quả */}
-          {searchResults.songs.length === 0 &&
-            searchResults.artists.length === 0 && (
-              <p className="text-muted">Không tìm thấy kết quả nào.</p>
-            )}
+          {(!searchResults.songs?.length && !searchResults.artists?.length) && (
+            <p>Không tìm thấy kết quả nào.</p>
+          )}
+
         </div>
       ) : (
         // Nếu chưa tìm kiếm thì hiển thị như bình thường
@@ -150,6 +152,7 @@ function MainContent() {
                     <div
                       className="position-relative"
                       onClick={() => navigate(`/song/${song.id}`)}
+
                     >
                       <img
                         src={getSongImage(song)}
@@ -183,6 +186,7 @@ function MainContent() {
                     <div
                       className="card-body px-2 py-2"
                       onClick={() => navigate(`/song/${song.id}`)}
+
                     >
                       <h6 className="text-truncate mb-1">{song.title}</h6>
                       <p
@@ -192,6 +196,7 @@ function MainContent() {
                           e.stopPropagation();
                           const artistId = song.artistId;
                           if (artistId) navigate(`/artist/${artistId}`);
+
                         }}
                       >
                         {getArtistName(song.artistId)}
@@ -216,6 +221,7 @@ function MainContent() {
                   className="col text-center"
                   style={{ minWidth: "160px", cursor: "pointer" }}
                   onClick={() => navigate(`/artist/${artist.id}`)}
+
                 >
                   <div
                     className="card border-0 bg-dark h-100 p-3"
