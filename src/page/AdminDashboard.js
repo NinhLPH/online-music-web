@@ -1,6 +1,8 @@
 import { Container, Col, Row, Table, Button, Image, Modal, Form, ListGroup } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const navItems = [
     { key: 'users', label: 'User Manager' },
@@ -10,16 +12,16 @@ const navItems = [
 ];
 
 const getDefaultFor = (view) => {
-    switch(view) {
-        case 'users': 
+    switch (view) {
+        case 'users':
             return { username: '', password: '', avatar: '', subscription: { tier: 'basic', status: 'active', expiresOn: null } };
-        case 'artists': 
+        case 'artists':
             return { name: '', coverImg: '', description: '' };
-        case 'albums': 
+        case 'albums':
             return { title: '', artistId: '', coverImg: '', releaseYear: new Date().getFullYear() };
-        case 'songs': 
+        case 'songs':
             return { title: '', artistId: '', albumId: '', duration: 0, genre: '', src: '', isPremium: false };
-        default: 
+        default:
             return {};
     }
 }
@@ -30,12 +32,15 @@ export default function AdminDashboard() {
     const [albums, setAlbums] = useState([]);
     const [songs, setSongs] = useState([]);
 
-    const [activeView, setActiveView] = useState('users'); 
+    const [activeView, setActiveView] = useState('users');
 
     const [showModal, setShowModal] = useState(false);
     const [modalMode, setModalMode] = useState('add');
     const [currentItem, setCurrentItem] = useState(null);
-    const [formData, setFormData] = useState({}); 
+    const [formData, setFormData] = useState({});
+
+    const { currentUser, logout } = useAuth();
+    const navigate = useNavigate();
 
     const API_URL = "http://localhost:9000";
 
@@ -51,12 +56,16 @@ export default function AdminDashboard() {
         axios.get(`${API_URL}/albums`)
             .then(res => setAlbums(res.data))
             .catch(console.error);
-            
+
         axios.get(`${API_URL}/songs`)
             .then(res => setSongs(res.data))
             .catch(console.error);
     }, []);
 
+    const handleLogout = () => {
+        logout();
+        navigate("/home");
+    };
 
     const handleCloseModal = () => {
         setShowModal(false);
@@ -73,10 +82,10 @@ export default function AdminDashboard() {
 
     const handleShowEditModal = (item) => {
         setModalMode('edit');
-        const itemData = activeView === 'users' 
-            ? { ...getDefaultFor('users'), ...item } 
+        const itemData = activeView === 'users'
+            ? { ...getDefaultFor('users'), ...item }
             : { ...item };
-        
+
         setFormData(itemData);
         setCurrentItem(item);
         setShowModal(true);
@@ -106,13 +115,13 @@ export default function AdminDashboard() {
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         const resourceType = activeView;
-        
+
         try {
             let response;
             if (modalMode === 'add') {
                 response = await axios.post(`${API_URL}/${resourceType}`, formData);
                 const newItem = response.data;
-                switch(resourceType) {
+                switch (resourceType) {
                     case 'users': setUsers(prev => [...prev, newItem]); break;
                     case 'artists': setArtists(prev => [...prev, newItem]); break;
                     case 'albums': setAlbums(prev => [...prev, newItem]); break;
@@ -122,7 +131,7 @@ export default function AdminDashboard() {
             } else {
                 response = await axios.patch(`${API_URL}/${resourceType}/${currentItem.id}`, formData);
                 const updatedItem = response.data;
-                switch(resourceType) {
+                switch (resourceType) {
                     case 'users': setUsers(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item)); break;
                     case 'artists': setArtists(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item)); break;
                     case 'albums': setAlbums(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item)); break;
@@ -153,9 +162,9 @@ export default function AdminDashboard() {
     };
 
     const renderModalForm = () => {
-        if (!formData) return null; 
+        if (!formData) return null;
 
-        switch(activeView) {
+        switch (activeView) {
             case 'users':
                 return (
                     <>
@@ -171,13 +180,13 @@ export default function AdminDashboard() {
                             <Form.Label>Avatar URL</Form.Label>
                             <Form.Control type="text" name="avatar" value={formData.avatar || ''} onChange={handleFormChange} />
                         </Form.Group>
-                        
+
                         <Form.Group className="mb-3">
                             <Form.Label>Subscription Tier</Form.Label>
-                            <Form.Control 
-                                as="select" 
-                                name="subscription.tier" 
-                                value={formData.subscription?.tier || 'basic'} 
+                            <Form.Control
+                                as="select"
+                                name="subscription.tier"
+                                value={formData.subscription?.tier || 'basic'}
                                 onChange={handleFormChange}
                             >
                                 <option value="basic">Basic</option>
@@ -187,7 +196,7 @@ export default function AdminDashboard() {
                     </>
                 );
             case 'artists':
-                 return (
+                return (
                     <>
                         <Form.Group className="mb-3">
                             <Form.Label>Artist Name</Form.Label>
@@ -204,13 +213,13 @@ export default function AdminDashboard() {
                     </>
                 );
             case 'albums':
-                 return (
+                return (
                     <>
                         <Form.Group className="mb-3">
                             <Form.Label>Album Title</Form.Label>
                             <Form.Control type="text" name="title" value={formData.title || ''} onChange={handleFormChange} required />
                         </Form.Group>
-                         <Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Artist ID</Form.Label>
                             <Form.Control type="text" name="artistId" value={formData.artistId || ''} onChange={handleFormChange} required />
                         </Form.Group>
@@ -218,14 +227,14 @@ export default function AdminDashboard() {
                             <Form.Label>Cover Image URL</Form.Label>
                             <Form.Control type="text" name="coverImg" value={formData.coverImg || ''} onChange={handleFormChange} />
                         </Form.Group>
-                         <Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Release Year</Form.Label>
                             <Form.Control type="number" name="releaseYear" value={formData.releaseYear || ''} onChange={handleFormChange} />
                         </Form.Group>
                     </>
                 );
             case 'songs':
-                 return (
+                return (
                     <>
                         <Form.Group className="mb-3">
                             <Form.Label>Song Title</Form.Label>
@@ -239,11 +248,11 @@ export default function AdminDashboard() {
                             <Form.Label>Album ID</Form.Label>
                             <Form.Control type="text" name="albumId" value={formData.albumId || ''} onChange={handleFormChange} />
                         </Form.Group>
-                         <Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Duration (seconds)</Form.Label>
                             <Form.Control type="number" name="duration" value={formData.duration || 0} onChange={handleFormChange} />
                         </Form.Group>
-                         <Form.Group className="mb-3">
+                        <Form.Group className="mb-3">
                             <Form.Label>Source URL (src)</Form.Label>
                             <Form.Control type="text" name="src" value={formData.src || ''} onChange={handleFormChange} />
                         </Form.Group>
@@ -277,7 +286,7 @@ export default function AdminDashboard() {
                         </tbody>
                     </Table>
                 );
-            
+
             case 'albums':
                 return (
                     <Table bordered hover striped variant="dark">
@@ -304,7 +313,7 @@ export default function AdminDashboard() {
                                             {albumSongs.length > 0 ? (
                                                 <ListGroup variant="flush">
                                                     {albumSongs.map(s => (
-                                                        <ListGroup.Item key={s.id} className="bg-transparent text-white py-1 px-0 border-0" style={{fontSize: '0.9em'}}>
+                                                        <ListGroup.Item key={s.id} className="bg-transparent text-white py-1 px-0 border-0" style={{ fontSize: '0.9em' }}>
                                                             {s.title} (ID: {s.id})
                                                         </ListGroup.Item>
                                                     ))}
@@ -323,7 +332,7 @@ export default function AdminDashboard() {
                         </tbody>
                     </Table>
                 );
-            
+
             case 'artists':
                 return (
                     <Table bordered hover striped variant="dark">
@@ -344,7 +353,7 @@ export default function AdminDashboard() {
                     </Table>
                 );
             case 'songs':
-                 return (
+                return (
                     <Table bordered hover striped variant="dark">
                         <thead><tr><th>ID</th><th>Title</th><th>Artist ID</th><th>Album ID</th><th>Premium</th><th>Actions</th></tr></thead>
                         <tbody>
@@ -372,14 +381,33 @@ export default function AdminDashboard() {
 
     return (
         <Container fluid className="bg-dark text-white min-vh-100 p-3">
-            <h1 className="mb-4">Admin Dashboard</h1>
+            <div className="d-flex justify-content-between align-items-center">
+                <h1 className="mb-4">Admin Dashboard</h1>
+                <div>
+                    <div className="d-flex align-items-center">
+                        <img
+                            src={currentUser.avatar}
+                            alt={currentUser.username}
+                            className="rounded-circle me-2"
+                            style={{ width: "40px", height: "40px" }}
+                        />
+                        <span className="me-3">Chào, {currentUser.username}</span>
+                        <button
+                            className="btn btn-sm btn-outline-light"
+                            onClick={handleLogout}
+                        >
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
+            </div>
             <Row>
                 <Col sm={3} className="border-end border-secondary pe-4">
                     {navItems.map(item => (
-                        <Row 
+                        <Row
                             key={item.key}
                             className="p-3 rounded mb-2"
-                            style={{ 
+                            style={{
                                 cursor: 'pointer',
                                 backgroundColor: activeView === item.key ? '#0d6efd' : 'transparent'
                             }}
@@ -409,7 +437,7 @@ export default function AdminDashboard() {
                 <Modal.Body className="bg-dark text-white">
                     <Form onSubmit={handleFormSubmit}>
                         {renderModalForm()}
-                        
+
                         <div className="text-end mt-4">
                             <Button variant="secondary" onClick={handleCloseModal} className="me-2">
                                 Hủy

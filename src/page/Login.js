@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -75,6 +75,10 @@ export default function LoginPage() {
               >
                 {loading ? 'Đang xử lý...' : 'Đăng nhập'}
               </button>
+
+              <div className="text-center text-white mt-3">
+                Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+              </div>
             </form>
           </div>
         </div>
