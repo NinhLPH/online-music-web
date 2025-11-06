@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
 import { FaHeart, FaPlus, FaTimes, FaCheck } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 
-function SongDetail() {
-    const { id } = useParams(); // ✅ Lấy id từ URL
-    const [song, setSong] = useState(null);
+function SongDetail({ song }) {
     const [artist, setArtist] = useState(null);
     const [album, setAlbum] = useState(null);
     const [isFav, setIsFav] = useState(false);
@@ -15,52 +12,50 @@ function SongDetail() {
     const [showLyrics, setShowLyrics] = useState(false);
     const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
     const [playlists, setPlaylists] = useState([]);
-    const [inAnyPlaylist, setInAnyPlaylist] = useState(false);
+    const [inAnyPlaylist, setInAnyPlaylist] = useState(false); // ✅ kiểm tra đã trong playlist nào chưa
 
-    // ✅ Tải dữ liệu bài hát + thông tin liên quan
     useEffect(() => {
+        if (!song) return;
+
         const fetchData = async () => {
             try {
-                const [songRes, artistRes, albumRes, userRes, playlistsRes] =
+                const [artistRes, albumRes, userRes, songRes, playlistsRes] =
                     await Promise.all([
-                        axios.get(`http://localhost:9000/songs/${id}`),
-                        axios.get(`http://localhost:9000/artists?songId=${id}`),
-                        axios.get(`http://localhost:9000/albums?songId=${id}`),
+                        axios.get(`http://localhost:9000/artists/${song.artistId}`),
+                        axios.get(`http://localhost:9000/albums/${song.albumId}`),
                         axios.get(`http://localhost:9000/users/1`),
+                        axios.get(`http://localhost:9000/songs/${song.id}`),
                         axios.get(`http://localhost:9000/playlists?userId=1`),
                     ]);
 
-                const currentSong = songRes.data;
-                setSong(currentSong);
-
-                // Một số API có thể trả về mảng, xử lý linh hoạt
-                setArtist(artistRes.data[0] || artistRes.data || null);
-                setAlbum(albumRes.data[0] || albumRes.data || null);
-                setLyrics(currentSong.lyrics || "Chưa có lời bài hát cho bài này.");
-                setIsFav(userRes.data.favorites?.includes(Number(id)));
+                setArtist(artistRes.data);
+                setAlbum(albumRes.data);
+                setIsFav(userRes.data.favorites?.includes(song.id));
+                setLyrics(songRes.data.lyrics || "Chưa có lời bài hát cho bài này.");
                 setPlaylists(playlistsRes.data);
 
+                // ✅ Kiểm tra bài hát có nằm trong playlist nào không
                 const isInPlaylist = playlistsRes.data.some((pl) =>
-                    pl.songIds.includes(Number(id))
+                    pl.songIds.includes(song.id)
                 );
                 setInAnyPlaylist(isInPlaylist);
             } catch (err) {
-                console.error("Lỗi tải dữ liệu bài hát:", err);
+                console.error("Lỗi tải dữ liệu:", err);
             }
         };
 
         fetchData();
-    }, [id]);
+    }, [song]);
 
-    // ✅ Lắng nghe thay đổi danh sách yêu thích
     useEffect(() => {
         const handleFavoritesUpdated = (e) => {
             const updated = e.detail;
-            setIsFav(updated.includes(Number(id)));
+            setIsFav(updated.includes(song.id));
         };
         window.addEventListener("favoritesUpdated", handleFavoritesUpdated);
-        return () => window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
-    }, [id]);
+        return () =>
+            window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
+    }, [song]);
 
     const showToast = (message) => {
         setToast(message);
@@ -74,14 +69,14 @@ function SongDetail() {
             const favorites = user.favorites || [];
             let updatedFavorites;
 
-            if (favorites.includes(Number(id))) {
-                updatedFavorites = favorites.filter((fid) => fid !== Number(id));
+            if (favorites.includes(song.id)) {
+                updatedFavorites = favorites.filter((id) => id !== song.id);
                 setIsFav(false);
-                showToast(`Đã xóa "${song?.title}" khỏi yêu thích`);
+                showToast(`Đã xóa "${song.title}" khỏi yêu thích`);
             } else {
-                updatedFavorites = [...favorites, Number(id)];
+                updatedFavorites = [...favorites, song.id];
                 setIsFav(true);
-                showToast(`Đã thêm "${song?.title}" vào yêu thích`);
+                showToast(`Đã thêm "${song.title}" vào yêu thích`);
             }
 
             await axios.patch(`http://localhost:9000/users/1`, {
@@ -115,25 +110,29 @@ function SongDetail() {
             let updatedSongs;
             let message = "";
 
-            if (playlist.songIds.includes(Number(id))) {
-                updatedSongs = playlist.songIds.filter((sid) => sid !== Number(id));
-                message = `Đã xóa "${song?.title}" khỏi playlist "${playlist.name}"`;
+            if (playlist.songIds.includes(song.id)) {
+                // ✅ Nếu đã có → xóa khỏi playlist
+                updatedSongs = playlist.songIds.filter((id) => id !== song.id);
+                message = `Đã xóa "${song.title}" khỏi playlist "${playlist.name}"`;
             } else {
-                updatedSongs = [...playlist.songIds, Number(id)];
-                message = `Đã thêm "${song?.title}" vào playlist "${playlist.name}"`;
+                // ✅ Nếu chưa có → thêm vào playlist
+                updatedSongs = [...playlist.songIds, song.id];
+                message = `Đã thêm "${song.title}" vào playlist "${playlist.name}"`;
             }
 
             await axios.patch(`http://localhost:9000/playlists/${playlistId}`, {
                 songIds: updatedSongs,
             });
 
+            // ✅ Cập nhật lại trạng thái icon
             const playlistsRes = await axios.get(`http://localhost:9000/playlists?userId=1`);
             setPlaylists(playlistsRes.data);
 
             const isInPlaylist = playlistsRes.data.some((pl) =>
-                pl.songIds.includes(Number(id))
+                pl.songIds.includes(song.id)
             );
             setInAnyPlaylist(isInPlaylist);
+
             setShowPlaylistPopup(false);
             showToast(message);
         } catch (err) {
@@ -142,12 +141,7 @@ function SongDetail() {
         }
     };
 
-    if (!song)
-        return (
-            <div style={{ color: "#fff", textAlign: "center", marginTop: "100px" }}>
-                Đang tải bài hát...
-            </div>
-        );
+    if (!song) return null;
 
     const bgImage = `https://picsum.photos/seed/${song.id}/1000`;
 
@@ -156,12 +150,13 @@ function SongDetail() {
             style={{
                 position: "absolute",
                 inset: 0,
+                zIndex: 999,
                 color: "#fff",
                 overflowY: "auto",
                 background: `url(${bgImage}) center center / cover no-repeat`,
                 animation: "fadeIn 0.3s ease",
                 paddingBottom: 100,
-                backdropFilter: "blur(40px)",
+                backdropFilter: "blur(50px)",
             }}
         >
             {/* Overlay mờ */}
@@ -170,6 +165,7 @@ function SongDetail() {
                     position: "absolute",
                     inset: 0,
                     background: "linear-gradient(to bottom, rgba(0,0,0,0.6), #121212 80%)",
+                    filter: "blur(20px)",
                     zIndex: -1,
                 }}
             />
@@ -255,7 +251,7 @@ function SongDetail() {
                     <FaHeart />
                 </button>
 
-                {/* Nút thêm vào playlist */}
+                {/* ✅ Nút thêm/hủy playlist */}
                 <button
                     onClick={openPlaylistPopup}
                     style={{
@@ -274,7 +270,7 @@ function SongDetail() {
                 </button>
             </div>
 
-            {/* Nút hiện lời bài hát */}
+            {/* Lời bài hát */}
             <div style={{ padding: "0 80px", marginTop: 40 }}>
                 <button
                     onClick={() => setShowLyrics(!showLyrics)}
@@ -294,7 +290,6 @@ function SongDetail() {
                 </button>
             </div>
 
-            {/* Lời bài hát */}
             {showLyrics && (
                 <div
                     style={{
@@ -313,7 +308,7 @@ function SongDetail() {
                 </div>
             )}
 
-            {/* Popup playlist */}
+            {/* Popup chọn playlist */}
             {showPlaylistPopup && (
                 <div
                     style={{
@@ -383,7 +378,9 @@ function SongDetail() {
                                     }
                                 >
                                     <span>{pl.name}</span>
-                                    {pl.songIds.includes(Number(id)) && <FaCheck color="#1db954" />}
+                                    {pl.songIds.includes(song.id) && (
+                                        <FaCheck color="#1db954" />
+                                    )}
                                 </div>
                             ))
                         ) : (

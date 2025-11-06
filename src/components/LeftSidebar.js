@@ -80,9 +80,8 @@ export default function LeftSidebar() {
       {/* --- Liked Songs section --- */}
       <div style={{ marginBottom: "1rem" }}>
         <div
-          className={`d-flex align-items-center p-2 rounded ${
-            active === "liked" ? "bg-secondary text-white" : ""
-          }`}
+          className={`d-flex align-items-center p-2 rounded ${active === "liked" ? "bg-secondary text-white" : ""
+            }`}
           style={{ cursor: "pointer", transition: "background 0.2s" }}
           onClick={openLikedPage}
         >
@@ -104,22 +103,21 @@ export default function LeftSidebar() {
             fontWeight: 600,
           }}
         >
-          PLAYLISTS
+          PLAYLISTS..
         </div>
 
         {playlists.map((pl) => {
           // ✅ Đếm chính xác số bài hát trong playlist
-         const songCount = Array.isArray(pl.songIds)
-  ? pl.songIds.filter(id => id && id !== "" && id !== null).length
-  : 0;
+          const songCount = Array.isArray(pl.songIds)
+            ? pl.songIds.filter(id => id && id !== "" && id !== null).length
+            : 0;
 
 
           return (
             <div
               key={pl.id}
-              className={`d-flex align-items-center p-2 rounded ${
-                active === pl.id ? "bg-secondary text-white" : ""
-              }`}
+              className={`d-flex align-items-center p-2 rounded ${active === pl.id ? "bg-secondary text-white" : ""
+                }`}
               style={{ cursor: "pointer", transition: "background 0.2s" }}
               onClick={() => openPlaylistPage(pl.id)}
             >
