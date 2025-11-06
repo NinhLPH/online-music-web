@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 
+
 const PlayerBar = () => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -277,6 +278,15 @@ const PlayerBar = () => {
     const togglePlayPause = () => {
         const audio = audioRef.current;
         if (!audio) return;
+
+        // 🧩 Kiểm tra quyền truy cập
+        if (currentSong.isPremium) {
+            if (!currentUser || currentUser.subscription?.tier !== "premium" || currentUser.subscription?.status !== "active") {
+                setToast("Chỉ tài khoản Premium mới nghe được bài này.");
+                return;
+            }
+        }
+
         if (isPlaying) {
             audio.pause();
             setIsPlaying(false);

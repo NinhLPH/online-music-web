@@ -242,6 +242,13 @@ function SongDetail() {
                     >
                         {song.title}
                     </h1>
+                    {song.isPremium && (
+                        <p style={{ color: "#ff4d4f", fontWeight: "600", marginTop: 8 }}>
+                            🔒 Chỉ dành cho tài khoản Premium
+                        </p>
+                    )}
+
+
                     <div style={{ color: "#b3b3b3", fontSize: 16 }}>
                         {artist ? artist.name : "Đang tải..."} •{" "}
                         {album ? album.releaseYear : "----"} •{" "}
