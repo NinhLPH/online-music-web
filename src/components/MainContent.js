@@ -4,41 +4,27 @@ import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
-import LikedSongs from "./LikedSongs";
-import Playlist from "./Playlist";
 
 function MainContent() {
   const [songs, setSongs] = useState([]);
   const [artists, setArtists] = useState([]);
-  const [view, setView] = useState("home"); // 'home' | 'liked' | 'playlist'
-  const [playlistId, setPlaylistId] = useState(null);
+  const [searchResults, setSearchResults] = useState(null); // ✅ thêm state để lưu kết quả tìm kiếm
   const navigate = useNavigate();
 
+  // ✅ Lắng nghe sự kiện tìm kiếm từ Header
+  useEffect(() => {
+    const handleSearch = (event) => {
+      setSearchResults(event.detail); // detail chứa keyword, songs, artists
+    };
+
+    window.addEventListener("searchSongs", handleSearch);
+    return () => window.removeEventListener("searchSongs", handleSearch);
+  }, []);
+
+  // ✅ Lấy dữ liệu gốc (toàn bộ songs và artists)
   useEffect(() => {
     axios.get("http://localhost:9000/songs").then((res) => setSongs(res.data));
     axios.get("http://localhost:9000/artists").then((res) => setArtists(res.data));
-    
-  }, []);
-
-  
-  // Lắng nghe event từ LeftSidebar
-  useEffect(() => {
-    const handleOpenLiked = () => {
-      setView("liked");
-    };
-
-    const handleOpenPlaylist = (e) => {
-      setPlaylistId(e.detail.id);
-      setView("playlist");
-    };
-
-    window.addEventListener("openLiked", handleOpenLiked);
-    window.addEventListener("openPlaylist", handleOpenPlaylist);
-
-    return () => {
-      window.removeEventListener("openLiked", handleOpenLiked);
-      window.removeEventListener("openPlaylist", handleOpenPlaylist);
-    };
   }, []);
 
   const getArtistName = (id) =>
@@ -48,166 +34,213 @@ function MainContent() {
 
   const formatDuration = (seconds) => Math.round(seconds / 60) + " phút";
 
-  
-  // ✅ Khi LeftSidebar gọi openLiked / openPlaylist → hiển thị component tương ứng
-  if (view === "liked") {
-    return (
-      <div
-        className="text-light"
-        style={{
-          backgroundColor: "#121212",
-          height: "calc(100vh - 90px)",
-          overflowY: "auto",
-          paddingBottom: "120px",
-        }}
-      >
-        <LikedSongs />
-      </div>
-    );
-  }
-
-  if (view === "playlist" && playlistId) {
-    return (
-      <div
-        className="text-light"
-        style={{
-          backgroundColor: "#121212",
-          height: "calc(100vh - 90px)",
-          overflowY: "auto",
-          paddingBottom: "120px",
-        }}
-      >
-        <Playlist playlistId={playlistId} />
-      </div>
-    );
-  }
   return (
     <div
       className="text-light"
       style={{
         backgroundColor: "#121212",
-        height: "calc(100vh - 90px)",
-        overflowY: "auto",
         paddingBottom: "120px",
       }}
     >
-      {/* 🎵 SONG LIST */}
-      <div className="container-fluid py-3">
-        <h4 className="fw-bold mb-3">All Songs</h4>
+      {/* 🔍 Kết quả tìm kiếm */}
+      {searchResults ? (
+        <div className="container-fluid py-3">
+          <h4 className="fw-bold mb-3">
+            Kết quả tìm kiếm cho:{" "}
+            <span className="text-success">"{searchResults.keyword}"</span>
+          </h4>
 
-        <div className="row row-cols-5 g-3">
-          {songs.map((song) => (
-            <div
-              key={song.id}
-              className="col"
-              style={{ minWidth: "160px", cursor: "pointer" }}
-            >
-              <div
-                className="card border-0 h-100"
-                style={{
-                  backgroundColor: "#121212",
-                  color: "#fff",
-                }}
-              >
-                {/* Ảnh bài hát */}
-                <div
-                  className="position-relative"
-                  onClick={() => navigate(`/song/${song.id}`)} // mở chi tiết bài hát
-                >
-                  <img
-                    src={getSongImage(song)}
-                    className="card-img-top rounded"
-                    style={{
-                      height: "135px",
-                      width: "100%",
-                      objectFit: "cover",
-                    }}
-                    alt={song.title}
-                  />
-
-                  {/* Nút play */}
+          {/* Bài hát tìm thấy */}
+          {searchResults.songs.length > 0 && (
+            <>
+              <h5 className="text-light mt-3 mb-2">Bài hát</h5>
+              <div className="row row-cols-5 g-3">
+                {searchResults.songs.map((song) => (
                   <div
-                    className="position-absolute"
-                    onClick={(e) => e.stopPropagation()} // ngăn chặn click lan lên ảnh
+                    key={song.id}
+                    className="col"
+                    style={{ minWidth: "160px", cursor: "pointer" }}
+                  >
+                    <div
+                      className="card border-0 h-100"
+                      style={{ backgroundColor: "#121212", color: "#fff" }}
+                      onClick={() => navigate(`/song/${song.id}`)}
+                    >
+                      <img
+                        src={`https://picsum.photos/seed/${song.id}/300`}
+                        className="card-img-top rounded"
+                        style={{ height: "135px", objectFit: "cover" }}
+                        alt={song.title}
+                      />
+                      <div className="card-body px-2 py-2">
+                        <h6 className="text-truncate mb-1">{song.title}</h6>
+                        <p className="small mb-1 text-light">
+                          {getArtistName(song.artistId)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Nghệ sĩ tìm thấy */}
+          {searchResults.artists.length > 0 && (
+            <>
+              <h5 className="text-light mt-4 mb-2">Nghệ sĩ</h5>
+              <div className="row row-cols-5 g-3">
+                {searchResults.artists.map((artist) => (
+                  <div
+                    key={artist.id}
+                    className="col text-center"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => navigate(`/artist/${artist.id}`)}
+                  >
+                    <div
+                      className="card border-0 bg-dark h-100 p-3"
+                      style={{ backgroundColor: "#121212" }}
+                    >
+                      <img
+                        src={artist.coverImg}
+                        className="rounded-circle mx-auto"
+                        style={{
+                          width: "110px",
+                          height: "110px",
+                          objectFit: "cover",
+                        }}
+                        alt={artist.name}
+                      />
+                      <p className="mt-2 text-truncate text-white">
+                        {artist.name}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Không có kết quả */}
+          {searchResults.songs.length === 0 &&
+            searchResults.artists.length === 0 && (
+              <p className="text-muted">Không tìm thấy kết quả nào.</p>
+            )}
+        </div>
+      ) : (
+        // Nếu chưa tìm kiếm thì hiển thị như bình thường
+        <>
+          {/* 🎵 SONG LIST */}
+          <div className="container-fluid py-3">
+            <h4 className="fw-bold mb-3">All Songs</h4>
+            <div className="row row-cols-5 g-3">
+              {songs.map((song) => (
+                <div
+                  key={song.id}
+                  className="col"
+                  style={{ minWidth: "160px", cursor: "pointer" }}
+                >
+                  <div
+                    className="card border-0 h-100"
                     style={{
-                      bottom: "8px",
-                      right: "8px",
-                      backgroundColor: "#1db954",
-                      borderRadius: "50%",
-                      width: "36px",
-                      height: "36px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      zIndex: 2,
+                      backgroundColor: "#121212",
+                      color: "#fff",
                     }}
                   >
-                    <PlayPauseButton song={song} />
+                    <div
+                      className="position-relative"
+                      onClick={() => navigate(`/song/${song.id}`)}
+                    >
+                      <img
+                        src={getSongImage(song)}
+                        className="card-img-top rounded"
+                        style={{
+                          height: "135px",
+                          width: "100%",
+                          objectFit: "cover",
+                        }}
+                        alt={song.title}
+                      />
+                      <div
+                        className="position-absolute"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          bottom: "8px",
+                          right: "8px",
+                          backgroundColor: "#1db954",
+                          borderRadius: "50%",
+                          width: "36px",
+                          height: "36px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          zIndex: 2,
+                        }}
+                      >
+                        <PlayPauseButton song={song} />
+                      </div>
+                    </div>
+                    <div
+                      className="card-body px-2 py-2"
+                      onClick={() => navigate(`/song/${song.id}`)}
+                    >
+                      <h6 className="text-truncate mb-1">{song.title}</h6>
+                      <p
+                        className="small mb-1 text-truncate text-light"
+                        style={{ color: "#ddd", cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const artistId = song.artistId;
+                          if (artistId) navigate(`/artist/${artistId}`);
+                        }}
+                      >
+                        {getArtistName(song.artistId)}
+                      </p>
+                      <p className="text-secondary small mb-0">
+                        {formatDuration(song.duration)}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                {/* Thông tin bài hát */}
+          {/* 👤 ARTISTS LIST */}
+          <div className="container-fluid pt-4">
+            <h4 className="fw-bold mb-3">Artists</h4>
+            <div className="row row-cols-5 g-3">
+              {artists.map((artist) => (
                 <div
-                  className="card-body px-2 py-2"
-                  onClick={() => navigate(`/song/${song.id}`)}
+                  key={artist.id}
+                  className="col text-center"
+                  style={{ minWidth: "160px", cursor: "pointer" }}
+                  onClick={() => navigate(`/artist/${artist.id}`)}
                 >
-                  <h6 className="text-truncate mb-1">{song.title}</h6>
-
-                  {/* 🔗 Bấm vào tên ca sĩ để mở trang nghệ sĩ */}
-                  <p
-                    className="small mb-1 text-truncate text-light"
-                    style={{ color: "#ddd", cursor: "pointer" }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const artistId = song.artistId;
-                      if (artistId) navigate(`/artist/${artistId}`);
-                    }}
+                  <div
+                    className="card border-0 bg-dark h-100 p-3"
+                    style={{ backgroundColor: "#121212" }}
                   >
-                    {getArtistName(song.artistId)}
-                  </p>
-
-                  <p className="text-secondary small mb-0">
-                    {formatDuration(song.duration)}
-                  </p>
+                    <img
+                      src={artist.coverImg}
+                      className="rounded-circle mx-auto"
+                      style={{
+                        width: "110px",
+                        height: "110px",
+                        objectFit: "cover",
+                      }}
+                      alt={artist.name}
+                    />
+                    <p className="mt-2 text-truncate text-white">
+                      {artist.name}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 👤 ARTISTS LIST */}
-      <div className="container-fluid pt-4">
-        <h4 className="fw-bold mb-3">Artists</h4>
-
-        <div className="row row-cols-5 g-3">
-          {artists.map((artist) => (
-            <div
-              key={artist.id}
-              className="col text-center"
-              style={{ minWidth: "160px", cursor: "pointer" }}
-              onClick={() => navigate(`/artist/${artist.id}`)} // ✅ mở trang AlbumArtists
-            >
-              <div
-                className="card border-0 bg-dark h-100 p-3"
-                style={{ backgroundColor: "#121212" }}
-              >
-                <img
-                  src={artist.coverImg}
-                  className="rounded-circle mx-auto"
-                  style={{
-                    width: "110px",
-                    height: "110px",
-                    objectFit: "cover",
-                  }}
-                  alt={artist.name}
-                />
-                <p className="mt-2 text-truncate text-white">{artist.name}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Footer */}
       <div style={{ margin: "40px 0 0" }}>

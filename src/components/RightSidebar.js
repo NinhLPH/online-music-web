@@ -3,6 +3,7 @@ import axios from "axios";
 import { useQueue } from "../context/QueueContext";
 import { FaEllipsisH, FaTimes } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useNavigate } from "react-router-dom";
 
 export default function RightSidebar() {
     const {
@@ -20,6 +21,7 @@ export default function RightSidebar() {
     const [toast, setToast] = useState(null);
     const [confirmBox, setConfirmBox] = useState(null);
     const [artistInfo, setArtistInfo] = useState(null);
+    const navigate = useNavigate();
 
     // 🔥 Lấy thông tin nghệ sĩ khi bài hát đổi
     useEffect(() => {
@@ -72,19 +74,114 @@ export default function RightSidebar() {
         }
     };
 
-    // 🎵 Thêm vào playlist
-    const handleAddToPlaylist = async (song) => {
+    // 🎵 Thêm vào playlist (chọn playlist hoặc tạo mới)
+    const [playlistSelector, setPlaylistSelector] = useState(null);
+    const [playlists, setPlaylists] = useState([]);
+    const [newPlaylistName, setNewPlaylistName] = useState("");
+
+    // Lấy danh sách playlist người dùng
+    useEffect(() => {
+        const fetchPlaylists = async () => {
+            try {
+                const res = await axios.get("http://localhost:9000/playlists?userId=1");
+                setPlaylists(res.data || []);
+            } catch (err) {
+                console.error("Lỗi tải playlist:", err);
+            }
+        };
+        fetchPlaylists();
+    }, []);
+
+    // Mở popup chọn playlist
+    const handleAddToPlaylist = (song) => {
+        setPlaylistSelector(song);
+    };
+
+    // ✅ Thêm hoặc xóa bài khỏi playlist
+    const addSongToPlaylist = async (playlistId) => {
         try {
-            const playlistRes = await axios.get("http://localhost:9000/playlists/1");
-            const playlist = playlistRes.data;
-            const updated = { ...playlist, songIds: [...new Set([...(playlist.songIds || []), song.id])] };
-            await axios.patch("http://localhost:9000/playlists/1", { songIds: updated.songIds });
-            showToast(`Đã thêm "${song.title}" vào playlist`);
+            const res = await axios.get(`http://localhost:9000/playlists/${playlistId}`);
+            const playlist = res.data;
+
+            const hasSong = playlist.songIds?.includes(playlistSelector.id);
+            let updatedSongs;
+
+            if (hasSong) {
+                // ❌ Nếu đã có → xóa khỏi playlist
+                updatedSongs = playlist.songIds.filter((id) => id !== playlistSelector.id);
+                showToast(`Đã xóa "${playlistSelector.title}" khỏi "${playlist.name}"`);
+            } else {
+                // ✅ Nếu chưa có → thêm vào playlist
+                updatedSongs = [
+                    ...new Set([...(playlist.songIds || []), playlistSelector.id]),
+                ];
+                showToast(`Đã thêm "${playlistSelector.title}" vào "${playlist.name}"`);
+            }
+
+            // Ghi lại vào db.json
+            await axios.patch(`http://localhost:9000/playlists/${playlistId}`, {
+                songIds: updatedSongs,
+            });
+
+            // Cập nhật lại state playlists tại chỗ
+            setPlaylists((prev) =>
+                prev.map((p) =>
+                    p.id === playlistId ? { ...p, songIds: updatedSongs } : p
+                )
+            );
         } catch (err) {
-            console.error("Lỗi khi thêm vào playlist:", err);
-            showToast("Không thể thêm vào playlist", "error");
+            console.error("Lỗi cập nhật playlist:", err);
+            showToast("Không thể cập nhật playlist", "error");
         }
     };
+
+    // 🆕 Tạo playlist mới rồi thêm bài
+    // 🆕 Tạo playlist mới rồi thêm bài
+    const createNewPlaylist = async () => {
+        if (!newPlaylistName.trim()) {
+            showToast("Vui lòng nhập tên playlist", "error");
+            return;
+        }
+
+        // ❌ Kiểm tra trùng tên playlist (không phân biệt hoa/thường)
+        const exists = playlists.some(
+            (pl) => pl.name.toLowerCase() === newPlaylistName.trim().toLowerCase()
+        );
+        if (exists) {
+            showToast("Tên playlist đã tồn tại!", "error");
+            return;
+        }
+
+        try {
+            // 🧩 Chuẩn hóa dữ liệu playlist (giữ đúng thứ tự key)
+            const orderedPlaylist = {
+                name: newPlaylistName.trim(),
+                userId: 1,
+                description: "Playlist mới tạo",
+                coverImg: `https://picsum.photos/seed/${encodeURIComponent(
+                    newPlaylistName
+                )}/300/300`,
+                songIds: [playlistSelector.id],
+            };
+
+            // ✅ Gửi 1 POST duy nhất, JSON Server sẽ tự tạo id ở đầu
+            const res = await axios.post(
+                "http://localhost:9000/playlists",
+                orderedPlaylist
+            );
+            const savedPlaylist = res.data;
+
+            // 🟢 Cập nhật lại state playlists
+            setPlaylists([...playlists, savedPlaylist]);
+            setNewPlaylistName("");
+            setPlaylistSelector(null);
+            showToast(`Đã tạo playlist "${savedPlaylist.name}" và thêm bài hát`);
+        } catch (err) {
+            console.error("Lỗi tạo playlist mới:", err);
+            showToast("Không thể tạo playlist mới", "error");
+        }
+    };
+
 
     // 🔜 Thêm vào hàng chờ
     const handleAddToQueue = (song) => {
@@ -97,16 +194,24 @@ export default function RightSidebar() {
         if (!currentSong) return null;
         return (
             <div
-                className="text-white d-flex flex-column align-items-center"
+                className="text-white"
                 style={{
-                    width: "100%",
-                    height: "calc(100vh - 110px)",
+                    position: "fixed",
+                    right: 0,
+                    top: "70px", // dưới header
+                    bottom: "90px", // trên player bar
+                    width: "16.66%", // tương đương col-md-2
+                    overflowY: "auto",
                     backgroundColor: "#181818",
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
-                    overflowY: "auto",
+                    boxSizing: "border-box",
+                    zIndex: 100,
                 }}
             >
+
+
+
                 <h6 className="text-uppercase text-muted small mb-3">Đang phát</h6>
 
                 <img
@@ -120,9 +225,8 @@ export default function RightSidebar() {
                         marginBottom: 12,
                         cursor: "pointer",
                     }}
-                    onClick={() =>
-                        window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))
-                    }
+                    onClick={() => navigate(`/song/${currentSong.id}`)}
+
                 />
 
                 <div
@@ -133,9 +237,8 @@ export default function RightSidebar() {
                         color: "#fff",
                         marginBottom: 4,
                     }}
-                    onClick={() =>
-                        window.dispatchEvent(new CustomEvent("showSongDetail", { detail: currentSong }))
-                    }
+                    onClick={() => navigate(`/song/${currentSong.id}`)}
+
                 >
                     {currentSong.title}
                 </div>
@@ -156,24 +259,38 @@ export default function RightSidebar() {
                         }}
                     >
                         <h6 className="text-uppercase text-muted small mb-3">Giới thiệu về nghệ sĩ</h6>
+
+                        {/* Ảnh ca sĩ → bấm để mở trang AlbumArtists */}
                         <img
                             src={artistInfo.coverImg}
                             alt={artistInfo.name}
-                            style={{
-                                width: "100%",
-                                borderRadius: 8,
-                                marginBottom: 10,
-                                objectFit: "cover",
-                            }}
+                            className="img-fluid rounded mb-3"
+                            style={{ cursor: "pointer", transition: "0.3s" }}
+                            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+                            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+                            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                         />
-                        <div style={{ fontWeight: 600, fontSize: "1rem", marginBottom: 6 }}>
+
+                        {/* Tên ca sĩ → bấm để mở trang AlbumArtists */}
+                        <div
+                            style={{
+                                fontWeight: 600,
+                                fontSize: "1.1rem",
+                                marginBottom: 6,
+                                cursor: "pointer",
+                                color: "#fff",
+                            }}
+                            onClick={() => navigate(`/artist/${artistInfo.id}`)}
+                        >
                             {artistInfo.name}
                         </div>
-                        <div style={{ color: "#ccc", fontSize: "0.88rem", textAlign: "justify" }}>
+
+                        <div style={{ color: "#ccc", fontSize: "0.9rem", textAlign: "justify" }}>
                             {artistInfo.description || "Chưa có thông tin về nghệ sĩ này."}
                         </div>
                     </div>
                 )}
+
             </div>
         );
     }
@@ -188,15 +305,22 @@ export default function RightSidebar() {
             <div
                 className="text-white"
                 style={{
-                    width: "100%",
-                    height: "calc(100vh - 110px)",
+                    position: "fixed",
+                    right: 0,
+                    top: "70px", // dưới header
+                    bottom: "90px", // trên player bar
+                    width: "16.66%", // tương đương col-md-2
                     overflowY: "auto",
                     backgroundColor: "#181818",
                     borderLeft: "1px solid rgba(255,255,255,0.1)",
                     padding: "16px",
-                    paddingBottom: "40px",
+                    boxSizing: "border-box",
+                    zIndex: 100,
                 }}
             >
+
+
+
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h5 className="fw-bold">Danh sách phát</h5>
                     <button
@@ -292,6 +416,112 @@ export default function RightSidebar() {
                     </>
                 )}
             </div>
+            {playlistSelector && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 3000,
+                    }}
+                    onClick={() => setPlaylistSelector(null)}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: "#181818",
+                            color: "#fff",
+                            padding: 20,
+                            borderRadius: 10,
+                            width: 320,
+                            maxHeight: "70vh",
+                            overflowY: "auto",
+                        }}
+                    >
+                        <h5 className="fw-bold mb-3">Thêm vào playlist</h5>
+
+                        {/* Danh sách playlist */}
+                        {playlists.length > 0 ? (
+                            playlists.map((pl) => {
+                                const isInPlaylist = pl.songIds?.includes(playlistSelector.id);
+                                return (
+                                    <button
+                                        key={pl.id}
+                                        className="w-100 text-start border-0 py-2 px-3 mb-1 d-flex justify-content-between align-items-center"
+                                        style={{
+                                            borderRadius: 6,
+                                            background: "#2a2a2a",
+                                            color: isInPlaylist ? "#1db954" : "#fff",
+                                            cursor: "pointer",
+                                            transition: "all 0.2s ease",
+                                        }}
+                                        onClick={() => addSongToPlaylist(pl.id)}
+                                    >
+                                        <span>🎵 {pl.name}</span>
+                                        <span style={{ fontSize: "1.1rem" }}>
+                                            {isInPlaylist ? "✔" : "+"}
+                                        </span>
+                                    </button>
+                                );
+                            })
+                        ) : (
+                            <p className="text-muted">Chưa có playlist nào</p>
+                        )}
+
+                        <hr style={{ borderColor: "#333" }} />
+
+                        {/* Tạo playlist mới */}
+                        <div className="mt-2">
+                            <h6 className="text-muted small mb-2">Tạo playlist mới</h6>
+                            <input
+                                type="text"
+                                value={newPlaylistName}
+                                onChange={(e) => setNewPlaylistName(e.target.value)}
+                                placeholder="Nhập tên playlist..."
+                                style={{
+                                    width: "100%",
+                                    padding: "6px 10px",
+                                    borderRadius: 6,
+                                    border: "1px solid #444",
+                                    background: "#121212",
+                                    color: "#fff",
+                                    marginBottom: 8,
+                                }}
+                            />
+                            <button
+                                onClick={createNewPlaylist}
+                                style={{
+                                    width: "100%",
+                                    background: "#1db954",
+                                    border: "none",
+                                    padding: "8px 0",
+                                    borderRadius: 6,
+                                    color: "#fff",
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    transition: "background 0.2s ease",
+                                }}
+                                onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background = "#18a34a")
+                                }
+                                onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background = "#1db954")
+                                }
+                            >
+                                + Tạo và thêm bài hát
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
 
             {/* Confirm Box */}
             {confirmBox && (
