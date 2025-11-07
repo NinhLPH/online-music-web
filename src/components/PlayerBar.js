@@ -113,7 +113,6 @@ const PlayerBar = () => {
             window.removeEventListener("favoritesUpdated", handleFavoritesUpdated);
     }, []);
 
-    // 🧩 Khi đổi bài hát → khôi phục hoặc phát mới
     useEffect(() => {
         if (!currentSong || !audioRef.current) return;
         const audio = audioRef.current;
@@ -125,13 +124,29 @@ const PlayerBar = () => {
         audio.onloadedmetadata = () => {
             setDuration(audio.duration);
 
+            // 🧩 Kiểm tra quyền nghe Premium
+            const isPremiumSong = currentSong.isPremium;
+            const isPremiumUser =
+                currentUser &&
+                currentUser.subscription?.tier === "premium" &&
+                currentUser.subscription?.status === "active";
+
+            if (isPremiumSong && !isPremiumUser) {
+                // ❌ Không tự phát nếu user không đủ quyền
+                setIsPlaying(false);
+                setIsPlayingGlobal(false);
+                audio.pause();
+                setToast("Bài này chỉ dành cho tài khoản Premium.");
+                return;
+            }
+
+            // 🔸 Nếu load lại cùng bài trước đó → không tự phát
             if (savedState?.currentSong?.id === currentSong.id) {
-                // 🔸 Nếu load lại bài đang phát trước đó → KHÔNG tự play
                 setIsPlaying(false);
                 setIsPlayingGlobal(false);
                 audio.pause();
             } else {
-                // 🔹 Nếu là bài mới → phát luôn
+                // 🔹 Nếu là bài mới và user hợp lệ → phát luôn
                 audio
                     .play()
                     .then(() => {
@@ -146,7 +161,7 @@ const PlayerBar = () => {
         window.dispatchEvent(
             new CustomEvent("playerSongChange", { detail: currentSong })
         );
-    }, [currentSong, setIsPlayingGlobal]);
+    }, [currentSong, setIsPlayingGlobal, currentUser]);
 
     // 🧩 Điều khiển play/pause
     useEffect(() => {
@@ -279,7 +294,7 @@ const PlayerBar = () => {
         if (!audio) return;
 
         // 🧩 Kiểm tra quyền truy cập
-            if (currentSong.isPremium) {
+        if (currentSong.isPremium) {
             if (!currentUser || currentUser.subscription?.tier !== "premium" || currentUser.subscription?.status !== "active") {
                 setToast("Chỉ tài khoản Premium mới nghe được bài này.");
                 return;
@@ -304,8 +319,8 @@ const PlayerBar = () => {
         }
     };
 
-            if (!currentSong) return null;
-        if (!currentUser) return null;
+    if (!currentSong) return null;
+    if (!currentUser) return null;
 
     const isFavorite = favorites.map(Number).includes(Number(currentSong.id));
 
@@ -319,7 +334,7 @@ const PlayerBar = () => {
     };
     const hoverIn = (e) => (e.currentTarget.style.color = "#1db954");
     const hoverOut = (e) => (e.currentTarget.style.color = "#fff");
-   
+
     return (
         <>
             if (!currentUser) return null;
