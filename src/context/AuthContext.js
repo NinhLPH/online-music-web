@@ -22,6 +22,32 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
     }, []);
 
+    useEffect(() => {
+        if (!currentUser?.subscription?.expiresOn) return;
+
+        const checkExpire = async () => {
+            const now = new Date();
+            const exp = new Date(currentUser.subscription.expiresOn);
+
+            if (exp < now) {
+                await fetch(`http://localhost:9000/users/${currentUser.id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        subscription: {
+                            tier: "basic",
+                            status: "expired",
+                            expiresOn: null
+                        }
+                    })
+                });
+                window.location.reload();
+            }
+        };
+
+        checkExpire();
+    }, [currentUser]);
+
     const login = async (username, password) => {
         try {
             const response = await axios.get(`${API_URL}/users`, {
@@ -33,8 +59,8 @@ export const AuthProvider = ({ children }) => {
 
             if (response.data && response.data.length > 0) {
                 const user = response.data[0];
-                const { password, ...userToStore } = user; 
-                
+                const { password, ...userToStore } = user;
+
                 localStorage.setItem('music-app-user', JSON.stringify(userToStore));
                 setCurrentUser(userToStore);
                 return userToStore;
@@ -54,34 +80,29 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (username, password) => {
         try {
-            // 1. Kiểm tra xem user đã tồn tại chưa
             const checkUser = await axios.get(`${API_URL}/users?username=${username}`);
             if (checkUser.data && checkUser.data.length > 0) {
                 return { success: false, message: 'Tên đăng nhập đã tồn tại.' };
             }
 
-            // 2. Tạo đối tượng user mới
             const newUser = {
                 username: username,
                 password: password,
-                avatar: `https://picsum.photos/seed/${username}/100/100`, // Avatar mặc định
+                avatar: `https://picsum.photos/seed/${username}/100/100`,
                 favorites: [],
-                subscription: { // Gói cước mặc định
+                subscription: {
                     tier: "basic",
                     status: "active",
-                    expiresOn: null 
+                    expiresOn: null
                 }
             };
 
-            // 3. POST user mới lên server
             await axios.post(`${API_URL}/users`, newUser);
 
-            // 4. Tự động đăng nhập sau khi đăng ký thành công
             const loggedInUser = await login(username, password);
             if (loggedInUser) {
                 return { success: true, user: loggedInUser };
             } else {
-                // Trường hợp này ít xảy ra, nhưng vẫn nên xử lý
                 return { success: false, message: 'Đăng ký thành công nhưng đăng nhập tự động thất bại.' };
             }
 
@@ -91,7 +112,27 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const value = {currentUser, login, logout, register};
+    // CHECK PREMIUM 
+    const isPremium = () => {
+        if (!currentUser || !currentUser.subscription) return false;
+        const exp = new Date(currentUser.subscription.expiresOn);
+        const now = new Date();
+        return currentUser.subscription.tier === "premium" &&
+               currentUser.subscription.status === "active" &&
+               exp > now;
+    };
+    const updateSubscription = (subscription) => {
+    const updatedUser = {
+      ...currentUser,
+      subscription
+    };
+
+    setCurrentUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+};
+
+
+    const value = { currentUser, login, logout, register, isPremium, updateSubscription };
 
     return (
         <AuthContext.Provider value={value}>

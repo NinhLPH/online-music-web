@@ -23,7 +23,7 @@
       "favorites": [],
       "subscription": {
         "tier": "basic",
-        "status": "active",
+        "status": "expired",
         "expiresOn": null
       }
     },
@@ -152,9 +152,7 @@
       "userId": 1,
       "description": "Những bài V-Pop hay nhất của Sơn Tùng.",
       "coverImg": "https://picsum.photos/seed/playlist1/300/300",
-      "songIds": [
-        202
-      ]
+      "songIds": []
     },
     {
       "id": "2",

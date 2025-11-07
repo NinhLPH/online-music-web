@@ -1,13 +1,11 @@
-
 import { FaPlay, FaPause } from "react-icons/fa";
 import { useQueue } from "../context/QueueContext";
 import { useAuth } from "../context/AuthContext";
-import React, { useState } from "react"; // 🧩 thêm useState
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ THÊM
 
 /**
-
 Nút Play/Pause dùng chung cho tất cả nơi (MainContent, SongDetail, v.v.)
-
 Tự đồng bộ trạng thái phát thông qua QueueContext và PlayerBar.
 */
 const PlayPauseButton = ({ song, showText = false }) => {
@@ -17,10 +15,12 @@ const PlayPauseButton = ({ song, showText = false }) => {
         isPlaying,
         togglePlayPause,
     } = useQueue();
+
     const { currentUser } = useAuth();
     const [showModal, setShowModal] = useState(false);
     const [toast, setToast] = useState(null);
 
+    const navigate = useNavigate(); // ✅ THÊM
 
     // ✅ Xác định bài hiện tại
     const isCurrent = currentSong && currentSong.id === song.id;
@@ -42,7 +42,6 @@ const PlayPauseButton = ({ song, showText = false }) => {
             }
         }
 
-
         const isCurrent = currentSong && currentSong.id === song.id;
         if (!isCurrent) {
             playSong(song.id);
@@ -54,6 +53,7 @@ const PlayPauseButton = ({ song, showText = false }) => {
         togglePlayPause();
         window.dispatchEvent(new CustomEvent(isPlaying ? "playerPause" : "playerPlay"));
     };
+
     return (
         <>
             <button
@@ -109,8 +109,7 @@ const PlayPauseButton = ({ song, showText = false }) => {
                             <button
                                 onClick={() => {
                                     setShowModal(false);
-                                    setToast("🎵 Hãy nâng cấp Premium để nghe mọi bài hát không giới hạn!");
-                                    setTimeout(() => setToast(null), 3000);
+                                    navigate("/upgrade"); // ✅ CHUYỂN TRANG NÂNG CẤP
                                 }}
                                 style={{
                                     background: "#1db954",

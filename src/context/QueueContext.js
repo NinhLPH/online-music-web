@@ -102,6 +102,7 @@ export const QueueProvider = ({ children }) => {
         }
     };
 
+
     const playPrevSong = () => {
         if (history.length === 0) return;
         const prev = history[history.length - 1];

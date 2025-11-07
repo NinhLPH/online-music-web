@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { FaHeart, FaPlus, FaTimes, FaCheck } from "react-icons/fa";
@@ -20,6 +21,7 @@ function SongDetail() {
     const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
     const [playlists, setPlaylists] = useState([]);
     const [inAnyPlaylist, setInAnyPlaylist] = useState(false);
+  
 
     // ✅ Tải dữ liệu bài hát + liên quan
     useEffect(() => {
@@ -180,10 +182,11 @@ function SongDetail() {
                 Đang tải bài hát...
             </div>
         );
-
+    
     const bgImage = `https://picsum.photos/seed/${song.id}/1000`;
 
     return (
+
         <div
             style={{
                 color: "#fff",
@@ -461,6 +464,7 @@ function SongDetail() {
                     {toast}
                 </div>
             )}
+           
             <Footer />
 
             <style>

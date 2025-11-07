@@ -23,6 +23,7 @@ export default function Header() {
     logout();
     navigate("/home");
   };
+  const { isPremium, user } = useAuth();
 
   // ✅ Lưu & phát event sang MainContent
   const triggerSearch = async (query, customResult = null) => {
@@ -140,6 +141,7 @@ export default function Header() {
 
   return (
     <nav className="navbar navbar-expand-lg bg-dark navbar-dark px-3">
+     
       <div className="container-fluid d-flex align-items-center justify-content-between">
         {/* Logo */}
         <div className="d-flex align-items-center">
@@ -253,27 +255,51 @@ export default function Header() {
 
         {/* User info */}
         <div>
-          {currentUser ? (
-            <div className="d-flex align-items-center">
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.username}
-                className="rounded-circle me-2"
-                style={{ width: "40px", height: "40px" }}
-              />
-              <span className="me-3">Chào, {currentUser.username}</span>
-              <button
-                className="btn btn-sm btn-outline-light"
-                onClick={handleLogout}
-              >
-                Đăng xuất
-              </button>
+              {currentUser ? (
+          <div className="d-flex align-items-center">
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.username}
+              className="rounded-circle me-2"
+              style={{ width: "40px", height: "40px" }}
+            />
+
+            <div className="d-flex flex-column me-3" style={{lineHeight: 1.1}}>
+              <span>Chào, <strong>{currentUser.username}</strong></span>
+
+              {/* Hiển thị Premium badge */}
+              {currentUser.subscription?.tier === "premium" &&
+              currentUser.subscription?.status === "active" && (
+                <span
+                  style={{
+                    background: "linear-gradient(45deg, gold, #ffb300)",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
+                    color: "#000",
+                    fontSize: "0.75rem",
+                    fontWeight: "700",
+                    marginTop: "2px",
+                    textAlign: "center",
+                  }}
+                >
+                  ⭐ PREMIUM
+                </span>
+              )}
             </div>
-          ) : (
-            <Link to="/login" className="btn btn-light">
-              Đăng nhập
-            </Link>
-          )}
+
+            <button
+              className="btn btn-sm btn-outline-light"
+              onClick={handleLogout}
+            >
+              Đăng xuất
+            </button>
+          </div>
+        ) : (
+          <Link to="/login" className="btn btn-light">
+            Đăng nhập
+          </Link>
+        )}
+
         </div>
       </div>
     </nav>

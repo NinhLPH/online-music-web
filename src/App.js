@@ -10,6 +10,7 @@ import AlbumArtists from "./components/AlbumArtists";
 import AdminDashboard from "./page/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
 import RegisterPage from "./page/Register";
+import Upgrade from "./page/Upgrade";
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
                                 </AdminRoute>
                             }
                         />
+                        <Route path="/upgrade" element={<Upgrade/>} />
                     </Routes>
                 </QueueProvider>
             </BrowserRouter>

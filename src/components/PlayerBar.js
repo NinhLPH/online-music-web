@@ -31,7 +31,7 @@ const PlayerBar = () => {
     const hasFetched = useRef(false);
     const navigate = useNavigate();
     const { currentUser } = useAuth();
-
+    const { isPremium } = useAuth();
 
     const {
         toggleQueue,
@@ -274,18 +274,18 @@ const PlayerBar = () => {
         }
     };
 
-
     const togglePlayPause = () => {
         const audio = audioRef.current;
         if (!audio) return;
 
         // 🧩 Kiểm tra quyền truy cập
-        if (currentSong.isPremium) {
+            if (currentSong.isPremium) {
             if (!currentUser || currentUser.subscription?.tier !== "premium" || currentUser.subscription?.status !== "active") {
                 setToast("Chỉ tài khoản Premium mới nghe được bài này.");
                 return;
             }
         }
+
 
         if (isPlaying) {
             audio.pause();
@@ -304,7 +304,8 @@ const PlayerBar = () => {
         }
     };
 
-    if (!currentSong) return null;
+            if (!currentSong) return null;
+        if (!currentUser) return null;
 
     const isFavorite = favorites.map(Number).includes(Number(currentSong.id));
 
@@ -318,7 +319,7 @@ const PlayerBar = () => {
     };
     const hoverIn = (e) => (e.currentTarget.style.color = "#1db954");
     const hoverOut = (e) => (e.currentTarget.style.color = "#fff");
-
+   
     return (
         <>
             if (!currentUser) return null;
