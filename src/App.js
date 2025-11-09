@@ -24,6 +24,7 @@ function App() {
                         <Route path="/register" element={<RegisterPage />} />
 
                         <Route element={<MainLayout />}>
+                            <Route index element={<MainContent />} />
                             <Route path="/home" element={<MainContent />} />
                             <Route path="/song/:id" element={<SongDetail />} />
                             <Route path="/artist/:id" element={<AlbumArtists />} />
