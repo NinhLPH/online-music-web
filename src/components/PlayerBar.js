@@ -55,7 +55,7 @@ const PlayerBar = () => {
                 const artists = artistRes.data;
                 const songsWithArtist = songRes.data.map((song) => {
                     const artist = artists.find(
-                        (a) => Number(a.id) === Number(song.artistId)
+                        (a) => a.id == song.artistId
                     );
                     return { ...song, artist: artist ? artist.name : "Unknown Artist" };
                 });

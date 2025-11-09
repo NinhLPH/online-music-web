@@ -32,19 +32,34 @@ function SongDetail() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [songRes, artistRes, albumRes] = await Promise.all([
-                    axios.get(`http://localhost:9000/songs/${id}`),
-                    axios.get(`http://localhost:9000/artists?songId=${id}`),
-                    axios.get(`http://localhost:9000/albums?songId=${id}`),
-                ]);
-
+                const songRes = await axios.get(`http://localhost:9000/songs/${id}`);
                 const currentSong = songRes.data;
                 setSong(currentSong);
-                setArtist(artistRes.data[0] || artistRes.data || null);
-                setAlbum(albumRes.data[0] || albumRes.data || null);
                 setLyrics(currentSong.lyrics || "Chưa có lời bài hát cho bài này.");
 
-                // Nếu có user đăng nhập thì tải thêm thông tin
+                const artistIdToFetch = currentSong.artistId;
+
+                let albumIdToFetch = null;
+                if (Array.isArray(currentSong.albumId) && currentSong.albumId.length > 0) {
+                    albumIdToFetch = currentSong.albumId[0];
+                } else if (!Array.isArray(currentSong.albumId) && currentSong.albumId) {
+                    albumIdToFetch = currentSong.albumId;
+                }
+
+                const artistPromise = artistIdToFetch
+                    ? axios.get(`http://localhost:9000/artists/${artistIdToFetch}`)
+                    : Promise.resolve(null); 
+                
+                const albumPromise = albumIdToFetch
+                    ? axios.get(`http://localhost:9000/albums/${albumIdToFetch}`)
+                    : Promise.resolve(null);
+
+                const [artistRes, albumRes] = await Promise.all([
+                    artistPromise,
+                    albumPromise
+                ]);
+                setArtist(artistRes ? artistRes.data : null);
+                setAlbum(albumRes ? albumRes.data : null);
                 if (currentUser) {
                     const [userRes, playlistsRes] = await Promise.all([
                         axios.get(`http://localhost:9000/users/${currentUser.id}`),
