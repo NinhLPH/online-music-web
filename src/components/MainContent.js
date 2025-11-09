@@ -197,7 +197,7 @@ function MainContent() {
           )}
 
           {/* Không có kết quả */}
-          {(!searchResults.songs?.length && !searchResults.artists?.length) && (
+          {(!searchResults.songs?.length && !searchResults.artists?.length && !searchResults.albums?.length) && (
             <p>Không tìm thấy kết quả nào.</p>
           )}
 

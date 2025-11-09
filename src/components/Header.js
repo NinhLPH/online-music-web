@@ -38,25 +38,30 @@ export default function Header() {
       setIsLoading(true);
 
       try {
-        const [songsRes, artistsRes] = await Promise.all([
+        const [songsRes, artistsRes, albumsRes] = await Promise.all([
           axios.get("http://localhost:9000/songs"),
           axios.get("http://localhost:9000/artists"),
+          axios.get("http://localhost:9000/albums"),
         ]);
 
         const q = query.toLowerCase();
+        
         const matchedSongs = songsRes.data.filter(
-          (s) =>
-            s.title.toLowerCase().includes(q) ||
-            s.description?.toLowerCase().includes(q)
+          (s) => s.title.toLowerCase().includes(q)
         );
         const matchedArtists = artistsRes.data.filter((a) =>
           a.name.toLowerCase().includes(q)
+        );
+        const matchedAlbums = albumsRes.data.filter((al) =>
+          al.title.toLowerCase().includes(q)
         );
 
         customResult = {
           songs: matchedSongs,
           artists: matchedArtists,
+          albums: matchedAlbums,
         };
+
       } catch (err) {
         console.error(err);
       }
@@ -70,6 +75,7 @@ export default function Header() {
           keyword: query,
           songs: customResult?.songs || [],
           artists: customResult?.artists || [],
+          albums: customResult?.albums || [],
         },
       })
     );
@@ -135,6 +141,11 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleGoHome = () => {
+    window.dispatchEvent(new CustomEvent("clearSearch"));
+    navigate("/home"); 
+  };
+
   return (
     <nav className="navbar navbar-expand-lg bg-dark navbar-dark px-3">
       <div className="container-fluid d-flex align-items-center justify-content-between">
@@ -151,14 +162,18 @@ export default function Header() {
               objectFit: "cover",
               border: "2px solid #1db954",
             }}
-            onClick={() => navigate("/home")}
+            onClick={() => window.location.href = '/home'}
           />
         </div>
 
         {/* Menu */}
         <ul className="navbar-nav d-flex flex-row mx-3">
           <li className="nav-item mx-2">
-            <Link to="/home" className="nav-link text-white">
+            <Link 
+              to="/home" 
+              className="nav-link text-white"
+              onClick={() => window.dispatchEvent(new CustomEvent("clearSearch"))}
+            >
               Home
             </Link>
           </li>
