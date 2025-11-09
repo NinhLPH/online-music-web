@@ -52,6 +52,12 @@
       "name": "Lofi Girl",
       "coverImg": "/assets/artists-image/lofi-girl.jpg",
       "description": "Lofi Girl nổi tiếng với các bản nhạc lofi chill giúp học tập và thư giãn. Hình ảnh biểu tượng cô gái học tập bên cửa sổ đã trở thành một hiện tượng internet."
+    },
+    {
+      "id": "4",
+      "name": "Vũ",
+      "coverImg": "/assets/artists-image/vu.jpg",
+      "description": "Hoàng Thái Vũ, thường được biết đến với nghệ danh Vũ, là một nam ca sĩ kiêm nhạc sĩ sáng tác ca khúc người Việt Nam. Sinh ra trong gia đình có bố là quân nhân và mẹ là giáo viên, Vũ thường đăng tải các sáng tác của mình trên các Soundcloud."
     }
   ],
   "albums": [
@@ -75,6 +81,20 @@
       "artistId": 3,
       "coverImg": "https://picsum.photos/seed/album30/300/300",
       "releaseYear": 2023
+    },
+    {
+      "id": "40",
+      "title": "Bảo Tàng Của Nuối Tiếc",
+      "artistId": 4,
+      "coverImg": "https://picsum.photos/seed/album40/300/300",
+      "releaseYear": 2024
+    },
+    {
+      "id": "50",
+      "title": "Best of Vũ",
+      "artistId": 4,
+      "coverImg": "https://picsum.photos/seed/album50/300/300",
+      "releaseYear": 2025
     }
   ],
   "songs": [
@@ -142,6 +162,72 @@
       "genre": "Lofi",
       "src": "/assets/songs/Coffee-Shop-Vibes.mp3",
       "isPremium": false,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "303",
+      "title": "Mùa Mưa Ấy",
+      "artistId": 4,
+      "albumId": [40,50],
+      "duration": 228,
+      "genre": "RNB",
+      "src": "/assets/songs/mua-mua-ay.mp3",
+      "isPremium": true,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "304",
+      "title": "Dành hết xuân thì để chờ nhau",
+      "artistId": 4,
+      "albumId": [40,50],
+      "duration": 288,
+      "genre": "RNB",
+      "src": "/assets/songs/danh-het-xuan-thi-de-cho-nhau.mp3",
+      "isPremium": true,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "305",
+      "title": "Nếu những tiếc nuối",
+      "artistId": 4,
+      "albumId": [40,50],
+      "duration": 260,
+      "genre": "RNB",
+      "src": "/assets/songs/neu-nhung-tiec-nuoi.mp3",
+      "isPremium": true,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "306",
+      "title": "Ngồi chờ trong vấn vương",
+      "artistId": 4,
+      "albumId": [40,50],
+      "duration": 201,
+      "genre": "RNB",
+      "src": "/assets/songs/ngoi-cho-trong-van-vuong.mp3",
+      "isPremium": true,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "307",
+      "title": "Vì anh đâu có biết",
+      "artistId": 4,
+      "albumId": 50,
+      "duration": 241,
+      "genre": "RNB",
+      "src": "/assets/songs/vi-anh-dau-co-biet.mp3",
+      "isPremium": true,
+      "lyrics": "Không có lời."
+    },
+    {
+      "id": "308",
+      "title": "Và em sẽ luôn là người tôi yêu nhất",
+      "artistId": 4,
+      "albumId": [40,50],
+      "duration": 257,
+      "genre": "RNB",
+      "src": "/assets/songs/va-em-se.mp3",
+      "isPremium": true,
       "lyrics": "Không có lời."
     }
   ],
