@@ -95,6 +95,10 @@ const PlayerBar = () => {
     // 🧩 Lấy danh sách yêu thích ban đầu
     useEffect(() => {
         const fetchFavorites = async () => {
+            if (!currentUser) {
+                setFavorites([]);
+                return;
+            }
             try {
                 const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
                 setFavorites(res.data.favorites || []);
@@ -246,6 +250,10 @@ const PlayerBar = () => {
 
     // ❤️ Toggle yêu thích
     const toggleFavorite = async () => {
+        if (!currentUser) {
+            showToast("Vui lòng đăng nhập để thêm vào yêu thích");
+            return;
+        }
         try {
             const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
             const user = res.data;
@@ -320,7 +328,6 @@ const PlayerBar = () => {
     };
 
     if (!currentSong) return null;
-    if (!currentUser) return null;
 
     const isFavorite = favorites.map(Number).includes(Number(currentSong.id));
 
@@ -388,17 +395,19 @@ const PlayerBar = () => {
                             >
                                 {currentSong.title}
                             </span>
-                            <button
-                                onClick={toggleFavorite}
-                                style={{
-                                    background: "none",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    color: isFavorite ? "#1db954" : "#fff",
-                                }}
-                            >
-                                {isFavorite ? <FaCheck /> : <FaPlus />}
-                            </button>
+                            {currentUser && (
+                                <button
+                                    onClick={toggleFavorite}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        color: isFavorite ? "#1db954" : "#fff",
+                                    }}
+                                >
+                                    {isFavorite ? <FaCheck /> : <FaPlus />}
+                                </button>
+                            )}
                         </div>
                         <div style={{ color: "#b3b3b3", fontSize: "0.8rem" }}>
                             {currentSong.artist || "Unknown Artist"}

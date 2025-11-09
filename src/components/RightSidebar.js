@@ -47,6 +47,10 @@ export default function RightSidebar() {
 
     // ❤️ Thêm / Xóa khỏi yêu thích
     const handleAddToFavorites = async (song) => {
+        if (!currentUser) {
+            showToast("Vui lòng đăng nhập để dùng tính năng này", "error");
+            return;
+        }
         try {
             const res = await axios.get(`http://localhost:9000/users/${currentUser.id}`);
             const user = res.data;
@@ -103,6 +107,10 @@ export default function RightSidebar() {
     // Lấy danh sách playlist người dùng
     useEffect(() => {
         const fetchPlaylists = async () => {
+            if (!currentUser) {
+                setPlaylists([]);
+                return;
+            }
             try {
                 const res = await axios.get(`http://localhost:9000/playlists?userId=${currentUser.id}`);
                 const normalized = (res.data || []).map(pl => ({
@@ -120,6 +128,10 @@ export default function RightSidebar() {
 
     // Mở popup chọn playlist
     const handleAddToPlaylist = (song) => {
+        if (!currentUser) {
+            showToast("Vui lòng đăng nhập để dùng tính năng này", "error");
+            return;
+        }
         setPlaylistSelector(song);
     };
 
