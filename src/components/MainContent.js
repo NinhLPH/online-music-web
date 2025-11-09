@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useQueue } from "../context/QueueContext";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FaPlay, FaPause } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
 
@@ -11,6 +13,16 @@ function MainContent() {
   const [albums, setAlbums] = useState([]);
   const [searchResults, setSearchResults] = useState(null); // ✅ thêm state để lưu kết quả tìm kiếm
   const navigate = useNavigate();
+
+  const {
+    allSongs,
+    setSongList,
+    playSong,
+    currentSong,
+    isPlaying,
+    play,
+    pause,
+  } = useQueue();
 
   // ✅ Lắng nghe sự kiện tìm kiếm từ Header
   useEffect(() => {
@@ -36,6 +48,24 @@ function MainContent() {
 
 
   const formatDuration = (seconds) => Math.round(seconds / 60) + " phút";
+
+  const handlePlayFromAllSongs = (songToPlay) => {
+    const isContextAlreadyAllSongs = allSongs.length === songs.length;
+
+    const songIdToPlay = songToPlay.id;
+    const currentSongId = currentSong?.id;
+
+    if (currentSongId === songIdToPlay && isPlaying) {
+      pause();
+    } else if (currentSongId === songIdToPlay && !isPlaying) {
+      play();
+    } else {
+      if (!isContextAlreadyAllSongs) {
+        setSongList(songs);
+      }
+      playSong(songIdToPlay);
+    }
+  };
 
   return (
     <div
@@ -154,8 +184,8 @@ function MainContent() {
                         alt={album.title}
                       />
                       <div className="card-body px-2 py-2">
-                        <h6 className="text-truncate mb-1" style={{fontWeight: 'bold'}}>{album.title}</h6>
-                        <p className="small mb-1" style={{color: '#b3b3b3'}}>
+                        <h6 className="text-truncate mb-1" style={{ fontWeight: 'bold' }}>{album.title}</h6>
+                        <p className="small mb-1" style={{ color: '#b3b3b3' }}>
                           {album.releaseYear} • {getArtistName(album.artistId)}
                         </p>
                       </div>
@@ -179,8 +209,10 @@ function MainContent() {
           <div className="container-fluid py-3">
             <h4 className="fw-bold mb-3">All Songs</h4>
             <div className="row row-cols-5 g-3">
-              {songs.map((song) => (
-                <div
+              {songs.map((song) => {
+                const isThisSongPlaying =
+                  currentSong?.id === song.id && isPlaying;
+                return (<div
                   key={song.id}
                   className="col"
                   style={{ minWidth: "160px", cursor: "pointer" }}
@@ -209,7 +241,10 @@ function MainContent() {
                       />
                       <div
                         className="position-absolute"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlayFromAllSongs(song);
+                          }}
                         style={{
                           bottom: "8px",
                           right: "8px",
@@ -221,9 +256,14 @@ function MainContent() {
                           alignItems: "center",
                           justifyContent: "center",
                           zIndex: 2,
+                          cursor: 'pointer',
                         }}
                       >
-                        <PlayPauseButton song={song} />
+                        {isThisSongPlaying ? (
+                          <FaPause size={14} color="black" />
+                        ) : (
+                          <FaPlay size={14} color="black" style={{ marginLeft: 2 }} />
+                        )}
                       </div>
                     </div>
                     <div
@@ -250,7 +290,8 @@ function MainContent() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -282,8 +323,8 @@ function MainContent() {
                       alt={album.title}
                     />
                     <div className="card-body px-2 py-2">
-                      <h6 className="text-truncate mb-1" style={{fontWeight: 'bold'}}>{album.title}</h6>
-                      <p className="small mb-1" style={{color: '#b3b3b3'}}>
+                      <h6 className="text-truncate mb-1" style={{ fontWeight: 'bold' }}>{album.title}</h6>
+                      <p className="small mb-1" style={{ color: '#b3b3b3' }}>
                         {album.releaseYear} • {getArtistName(album.artistId)}
                       </p>
                     </div>

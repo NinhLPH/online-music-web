@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Image, ListGroup } from "react-bootstrap";
-import { FaPlay, FaRegClock } from "react-icons/fa";
+import { useQueue } from "../context/QueueContext";
+import { FaPause, FaPlay, FaRegClock } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
 
@@ -34,6 +35,15 @@ export default function AlbumDetail() {
     const [songs, setSongs] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const {
+        playAlbumOrPlaylist,
+        currentSong,
+        isPlaying,
+        allSongs,
+        play,
+        pause,
+    } = useQueue();
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -56,6 +66,23 @@ export default function AlbumDetail() {
         };
         fetchData();
     }, [id, navigate]);
+
+    const isThisListLoaded =
+        songs.length > 0 &&
+        allSongs.length === songs.length &&
+        allSongs[0]?.id === songs[0]?.id;
+
+    const isCurrentlyPlaying = isThisListLoaded && isPlaying;
+
+    const handleAlbumPlay = () => {
+        if (isCurrentlyPlaying) {
+            pause();
+        } else if (isThisListLoaded && !isPlaying) {
+            play();
+        } else {
+            playAlbumOrPlaylist(songs);
+        }
+    };
 
     if (loading || !album || !artist) {
         return (
@@ -129,7 +156,7 @@ export default function AlbumDetail() {
                     </Row>
                 </Container>
             </div>
-            
+
             <div style={{ background: "#121212", color: "#fff", minHeight: "100vh" }}>
                 <Container fluid className="px-lg-5 pb-3">
                     {songs.length > 0 ? (
@@ -146,8 +173,13 @@ export default function AlbumDetail() {
                                 boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
                             }}
                             title={`Phát album ${album.title}`}
+                            onClick={handleAlbumPlay}
                         >
-                            <PlayPauseButton song={songs[0]} />
+                            {isCurrentlyPlaying ? (
+                                <FaPause size={24} color="black" />
+                            ) : (
+                                <FaPlay size={24} color="black" style={{ marginLeft: 3 }} />
+                            )}
                         </div>
                     ) : (
                         <p>Album này chưa có bài hát nào.</p>

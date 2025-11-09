@@ -141,7 +141,7 @@ export default function Header() {
         {/* Logo */}
         <div className="d-flex align-items-center">
           <img
-            src="/Logo.jpg"
+            src="assets/logo/logo.png"
             alt="Logo"
             style={{
               height: "45px",
@@ -163,14 +163,9 @@ export default function Header() {
             </Link>
           </li>
           <li className="nav-item mx-2">
-            <span className="nav-link text-white" style={{ cursor: "pointer" }}>
-              Library
-            </span>
-          </li>
-          <li className="nav-item mx-2">
-            <span className="nav-link text-white" style={{ cursor: "pointer" }}>
+            <Link to="/liked" className="nav-link text-white">
               Favourite
-            </span>
+            </Link>
           </li>
         </ul>
 

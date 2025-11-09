@@ -2,14 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { FaHeart, FaPlus, FaTimes, FaCheck } from "react-icons/fa";
+import { FaHeart, FaPlus, FaTimes, FaCheck, FaEllipsisH } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
 import { useAuth } from "../context/AuthContext"; // ✅ dùng context
+import { useQueue } from "../context/QueueContext";
 
 function SongDetail() {
     const { id } = useParams();
     const { currentUser } = useAuth(); // ✅ lấy user hiện tại
+    const { addToQueue } = useQueue();
+    const navigate = useNavigate();
 
     const [song, setSong] = useState(null);
     const [artist, setArtist] = useState(null);
@@ -19,9 +22,11 @@ function SongDetail() {
     const [lyrics, setLyrics] = useState("");
     const [showLyrics, setShowLyrics] = useState(false);
     const [showPlaylistPopup, setShowPlaylistPopup] = useState(false);
+    const [showActionsMenu, setShowActionsMenu] = useState(false);
+    const [actionsMenuPosition, setActionsMenuPosition] = useState({ x: 0, y: 0 });
     const [playlists, setPlaylists] = useState([]);
     const [inAnyPlaylist, setInAnyPlaylist] = useState(false);
-  
+
 
     // ✅ Tải dữ liệu bài hát + liên quan
     useEffect(() => {
@@ -176,13 +181,31 @@ function SongDetail() {
         }
     };
 
+    const handleAddToQueue = () => {
+        addToQueue(song);
+        showToast(`Đã thêm "${song?.title}" vào danh sách chờ`);
+        setShowActionsMenu(false);
+    };
+
+    const handleGoToArtist = () => {
+        if (!artist) return;
+        navigate(`/artist/${artist.id}`);
+        setShowActionsMenu(false);
+    };
+
+    const handleGoToAlbum = () => {
+        if (!album) return;
+        navigate(`/album/${album.id}`);
+        setShowActionsMenu(false);
+    };
+
     if (!song)
         return (
             <div style={{ color: "#fff", textAlign: "center", marginTop: "100px" }}>
                 Đang tải bài hát...
             </div>
         );
-    
+
     const bgImage = `https://picsum.photos/seed/${song.id}/1000`;
 
     return (
@@ -320,6 +343,55 @@ function SongDetail() {
                         >
                             {inAnyPlaylist ? <FaCheck /> : <FaPlus />}
                         </button>
+
+                        <div style={{ position: "relative", display: "inline-block" }}>
+                            <button
+                                onClick={() => setShowActionsMenu(!showActionsMenu)}
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "#fff",
+                                    fontSize: 22,
+                                    cursor: "pointer",
+                                }}
+                                title="Tác vụ khác"
+                            >
+                                <FaEllipsisH />
+                            </button>
+
+                            {showActionsMenu && (
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "100%",
+                                        right: 0,
+                                        marginTop: 6,
+                                        background: "#121212",
+                                        borderRadius: 8,
+                                        padding: "10px 0",
+                                        width: 180,
+                                        boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+                                        zIndex: 999,
+                                    }}
+                                >
+                                    <div className="popup-action-item" onClick={handleAddToQueue}>
+                                        Thêm vào danh sách chờ
+                                    </div>
+                                    <div
+                                        className={`popup-action-item ${!album ? 'disabled' : ''}`}
+                                        onClick={album ? handleGoToAlbum : null}
+                                    >
+                                        Đi đến album
+                                    </div>
+                                    <div
+                                        className={`popup-action-item ${!artist ? 'disabled' : ''}`}
+                                        onClick={artist ? handleGoToArtist : null}
+                                    >
+                                        Đi đến nghệ sĩ
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </>
                 )}
             </div>
@@ -464,18 +536,34 @@ function SongDetail() {
                     {toast}
                 </div>
             )}
-           
+
             <Footer />
 
             <style>
                 {`
-          ::-webkit-scrollbar { display: none; }
-          * { scrollbar-width: none; }
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
+                    ::-webkit-scrollbar { display: none; }
+                    * { scrollbar-width: none; }
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .popup-action-item {
+                        padding: 12px 15px;
+                        margin-bottom: 8px;
+                        border-radius: 8px;
+                        background: #1a1a1a;
+                        cursor: pointer;
+                        transition: 0.2s;
+                    }
+                    .popup-action-item:hover {
+                        background: #2a2a2a;
+                    }
+                    .popup-action-item.disabled {
+                        color: #555;
+                        cursor: not-allowed;
+                        background: #111;
+                    }
+                `}
             </style>
         </div>
     );

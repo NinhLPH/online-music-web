@@ -121,11 +121,11 @@ export default function LeftSidebar({ onSelectPlaylist }) {
     <div
       className="left-sidebar"
       style={{
-        width: 260,
+        width: "100%",
         backgroundColor: "#000",
         color: "#b3b3b3",
-        padding: "20px",
-        height: "100vh",
+        padding: "1rem",
+        height: "100%",
         overflowY: "auto",
         position: "relative",
         zIndex: 10,

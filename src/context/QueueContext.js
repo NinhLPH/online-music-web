@@ -117,6 +117,16 @@ export const QueueProvider = ({ children }) => {
     const pause = () => setIsPlaying(false);
     const togglePlayPause = () => setIsPlaying((prev) => !prev);
 
+    const playAlbumOrPlaylist = (songsList) => {
+        if (!songsList || songsList.length === 0) return;
+
+        setAllSongs(songsList);
+        setCurrentSong(songsList[0]);
+        setQueue([]);
+        setHistory([]);
+        setIsPlaying(true);
+    };
+
     return (
         <QueueContext.Provider
             value={{
@@ -136,6 +146,7 @@ export const QueueProvider = ({ children }) => {
                 play,
                 pause,
                 togglePlayPause,
+                playAlbumOrPlaylist,
             }}
         >
             {children}
