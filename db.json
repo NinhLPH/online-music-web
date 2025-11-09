@@ -23,8 +23,8 @@
       "favorites": [],
       "subscription": {
         "tier": "basic",
-        "status": "expired",
-        "expiresOn": null
+        "status": "active",
+        "expiresAt": "2099-12-31"
       }
     },
     {

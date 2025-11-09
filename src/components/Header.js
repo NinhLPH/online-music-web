@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FaBell, FaCog, FaUser, FaSearch, FaHistory } from "react-icons/fa";
+import { FaSearch, FaHistory } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +8,6 @@ import { useNavigate, Link } from "react-router-dom";
 export default function Header() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-
   const [keyword, setKeyword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -16,16 +15,14 @@ export default function Header() {
     JSON.parse(localStorage.getItem("searchHistory")) || []
   );
   const [showSuggestions, setShowSuggestions] = useState(false);
-
   const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate("/home");
   };
-  const { isPremium, user } = useAuth();
 
-  // ✅ Lưu & phát event sang MainContent
+  //  Lưu & phát event sang MainContent
   const triggerSearch = async (query, customResult = null) => {
     if (!query) return;
 
@@ -39,6 +36,7 @@ export default function Header() {
 
     if (!customResult) {
       setIsLoading(true);
+
       try {
         const [songsRes, artistsRes] = await Promise.all([
           axios.get("http://localhost:9000/songs"),
@@ -51,15 +49,18 @@ export default function Header() {
             s.title.toLowerCase().includes(q) ||
             s.description?.toLowerCase().includes(q)
         );
-
         const matchedArtists = artistsRes.data.filter((a) =>
           a.name.toLowerCase().includes(q)
         );
 
-        customResult = { songs: matchedSongs, artists: matchedArtists };
+        customResult = {
+          songs: matchedSongs,
+          artists: matchedArtists,
+        };
       } catch (err) {
         console.error(err);
       }
+
       setIsLoading(false);
     }
 
@@ -72,8 +73,6 @@ export default function Header() {
         },
       })
     );
-
-
     setShowSuggestions(false);
   };
 
@@ -82,7 +81,7 @@ export default function Header() {
     triggerSearch(keyword);
   };
 
-  // ✅ Gợi ý khi nhập
+  //  Gợi ý khi nhập
   const handleInputChange = async (e) => {
     const text = e.target.value;
     setKeyword(text);
@@ -118,30 +117,26 @@ export default function Header() {
 
   const handleSuggestionClick = (item) => {
     setKeyword(item.label);
-
     const result = {
       [`${item.type}s`]: [item.data],
     };
-
     triggerSearch(item.label, result);
   };
 
-  // ✅ Click ngoài dropdown → đóng
+  //  Click ngoài dropdown → đóng
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setShowSuggestions(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
 
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <nav className="navbar navbar-expand-lg bg-dark navbar-dark px-3">
-     
       <div className="container-fluid d-flex align-items-center justify-content-between">
         {/* Logo */}
         <div className="d-flex align-items-center">
@@ -163,13 +158,19 @@ export default function Header() {
         {/* Menu */}
         <ul className="navbar-nav d-flex flex-row mx-3">
           <li className="nav-item mx-2">
-            <Link to="/home" className="nav-link text-white">Home</Link>
+            <Link to="/home" className="nav-link text-white">
+              Home
+            </Link>
           </li>
           <li className="nav-item mx-2">
-            <span className="nav-link text-white" style={{ cursor: "pointer" }}>Library</span>
+            <span className="nav-link text-white" style={{ cursor: "pointer" }}>
+              Library
+            </span>
           </li>
           <li className="nav-item mx-2">
-            <span className="nav-link text-white" style={{ cursor: "pointer" }}>Favourite</span>
+            <span className="nav-link text-white" style={{ cursor: "pointer" }}>
+              Favourite
+            </span>
           </li>
         </ul>
 
@@ -195,7 +196,7 @@ export default function Header() {
             </div>
           </form>
 
-          {/* ✅ Suggestions UI */}
+          {/*  Suggestions UI */}
           {showSuggestions && (
             <div
               className="bg-dark text-white p-2 mt-1 rounded"
@@ -223,12 +224,11 @@ export default function Header() {
                 <p className="text-secondary px-2 m-0">Không có kết quả...</p>
               )}
 
-              {/* ✅ Search History */}
+              {/*  Search History */}
               {searchHistory.length > 0 && (
                 <div className="mt-2 border-top pt-2">
                   <strong>
-                    <FaHistory className="me-2" />
-                    Lịch sử tìm kiếm:
+                    <FaHistory className="me-2" /> Lịch sử tìm kiếm:
                   </strong>
                   {searchHistory.map((h, i) => (
                     <div
@@ -246,60 +246,75 @@ export default function Header() {
           )}
         </div>
 
-        {/* Icons */}
-        <div className="d-flex align-items-center text-white">
-          <FaBell className="mx-2 fs-5" />
-          <FaCog className="mx-2 fs-5" />
-          <FaUser className="mx-2 fs-5" />
-        </div>
-
-        {/* User info */}
+        {/*  User info */}
         <div>
-              {currentUser ? (
-          <div className="d-flex align-items-center">
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.username}
-              className="rounded-circle me-2"
-              style={{ width: "40px", height: "40px" }}
-            />
+          {currentUser ? (
+            <div className="d-flex align-items-center">
+              
+              {/*  GO PREMIUM BUTTON */}
+             {!(
+                currentUser?.subscription?.tier === "premium" &&
+                currentUser?.subscription?.status === "active"
+              ) && (
 
-            <div className="d-flex flex-column me-3" style={{lineHeight: 1.1}}>
-              <span>Chào, <strong>{currentUser.username}</strong></span>
-
-              {/* Hiển thị Premium badge */}
-              {currentUser.subscription?.tier === "premium" &&
-              currentUser.subscription?.status === "active" && (
-                <span
-                  style={{
-                    background: "linear-gradient(45deg, gold, #ffb300)",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    color: "#000",
-                    fontSize: "0.75rem",
-                    fontWeight: "700",
-                    marginTop: "2px",
-                    textAlign: "center",
+                <button
+                  className="btn btn-warning btn-sm me-3"
+                  onClick={() => {
+                    if (!currentUser) return navigate("/login");
+                    navigate("/upgrade");
                   }}
                 >
-                  ⭐ PREMIUM
-                </span>
+                  Go Premium
+                </button>
               )}
+
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.username}
+                className="rounded-circle me-2"
+                style={{ width: "40px", height: "40px" }}
+              />
+
+              <div
+                className="d-flex flex-column me-3"
+                style={{ lineHeight: 1.1 }}
+              >
+                <span>
+                  Chào, <strong>{currentUser.username}</strong>
+                </span>
+
+                {/* Premium badge */}
+                {currentUser.subscription?.tier === "premium" &&
+                  currentUser.subscription?.status === "active" && (
+                    <span
+                      style={{
+                        background: "linear-gradient(45deg, gold, #ffb300)",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        color: "#000",
+                        fontSize: "0.75rem",
+                        fontWeight: "700",
+                        marginTop: "2px",
+                        textAlign: "center",
+                      }}
+                    >
+                      ⭐ PREMIUM
+                    </span>
+                  )}
+              </div>
+
+              <button
+                className="btn btn-sm btn-outline-light"
+                onClick={handleLogout}
+              >
+                Đăng xuất
+              </button>
             </div>
-
-            <button
-              className="btn btn-sm btn-outline-light"
-              onClick={handleLogout}
-            >
-              Đăng xuất
-            </button>
-          </div>
-        ) : (
-          <Link to="/login" className="btn btn-light">
-            Đăng nhập
-          </Link>
-        )}
-
+          ) : (
+            <Link to="/login" className="btn btn-light">
+              Đăng nhập
+            </Link>
+          )}
         </div>
       </div>
     </nav>

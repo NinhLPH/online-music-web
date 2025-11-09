@@ -121,14 +121,21 @@ export const AuthProvider = ({ children }) => {
                currentUser.subscription.status === "active" &&
                exp > now;
     };
-    const updateSubscription = (subscription) => {
+   const updateSubscription = async (subscription) => {
     const updatedUser = {
-      ...currentUser,
-      subscription
+        ...currentUser,
+        subscription
     };
 
-    setCurrentUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    try {
+        await axios.patch(`${API_URL}/users/${currentUser.id}`, { subscription });
+
+        setCurrentUser(updatedUser);
+
+        localStorage.setItem("music-app-user", JSON.stringify(updatedUser));
+    } catch (err) {
+        console.error("Update subscription failed:", err);
+    }
 };
 
 
