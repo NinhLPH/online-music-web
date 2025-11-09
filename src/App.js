@@ -11,6 +11,9 @@ import AdminDashboard from "./page/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
 import RegisterPage from "./page/Register";
 import Upgrade from "./page/Upgrade";
+import AlbumDetail from "./components/AlbumDetail";
+import LikedSongs from "./components/LikedSongs";
+import PlaylistDetail from "./components/PlaylistDetail";
 
 
 function App() {
@@ -28,6 +31,9 @@ function App() {
                             <Route path="/home" element={<MainContent />} />
                             <Route path="/song/:id" element={<SongDetail />} />
                             <Route path="/artist/:id" element={<AlbumArtists />} />
+                            <Route path="album/:id" element={<AlbumDetail />} />
+                            <Route path="liked" element={<LikedSongs />} />
+                            <Route path="playlist/:id" element={<PlaylistDetail />} />
 
                         </Route>
 

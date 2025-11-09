@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import { FaHeart, FaMusic, FaPlay, FaListUl } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { FaHeart, FaMusic, FaPlay, FaListUl, FaPlus, FaTimes } from "react-icons/fa";
 import SongDetail from "./SongDetail";
 
 export default function LeftSidebar({ onSelectPlaylist }) {
@@ -8,241 +10,269 @@ export default function LeftSidebar({ onSelectPlaylist }) {
   const [playlists, setPlaylists] = useState([]);
   const [active, setActive] = useState(null);
   const [selectedSong, setSelectedSong] = useState(null);
-
-  // 🔁 Lấy danh sách bài hát yêu thích
-  const fetchFavorites = async () => {
-    try {
-      const userRes = await axios.get(`http://localhost:9000/users/1`);
-      const favoriteIds = userRes.data.favorites || [];
-      const songPromises = favoriteIds.map((id) =>
-        axios.get(`http://localhost:9000/songs/${id}`).then((res) => res.data)
-      );
-      const songsData = await Promise.all(songPromises);
-      setFavorites(songsData);
-    } catch (err) {
-      console.error("Lỗi tải danh sách yêu thích:", err);
-    }
-  };
-
-  // 🔁 Lấy danh sách playlist
-  const fetchPlaylists = async () => {
-    try {
-      const res = await axios.get(`http://localhost:9000/playlists?userId=1`);
-      setPlaylists(res.data || []);
-    } catch (err) {
-      console.error("Lỗi tải danh sách playlist:", err);
-    }
-  };
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    fetchFavorites();
-    fetchPlaylists();
+    if (currentUser) {
+      const fetchFavorites = async () => {
+        try {
+          const userRes = await axios.get(
+            `http://localhost:9000/users/${currentUser.id}`
+          );
+          const favoriteIds = userRes.data.favorites || [];
+          const songPromises = favoriteIds.map((id) =>
+            axios.get(`http://localhost:9000/songs/${id}`).then((res) => res.data)
+          );
+          const songsData = await Promise.all(songPromises);
+          setFavorites(songsData);
+        } catch (err) {
+          console.error("Lỗi tải danh sách yêu thích:", err);
+        }
+      };
 
-    // ⏳ Tự refresh mỗi 3s
-    const interval = setInterval(() => {
+      const fetchPlaylists = async () => {
+        try {
+          const res = await axios.get(
+            `http://localhost:9000/playlists?userId=${currentUser.id}`
+          );
+          setPlaylists(res.data || []);
+        } catch (err) {
+          console.error("Lỗi tải danh sách playlist:", err);
+        }
+      };
+
       fetchFavorites();
       fetchPlaylists();
-    }, 3000);
 
-    // 🧩 Lắng nghe sự kiện từ RightSidebar (playlistUpdated)
-    const handlePlaylistUpdate = () => fetchPlaylists();
-    window.addEventListener("playlistUpdated", handlePlaylistUpdate);
+      const handlePlaylistUpdate = () => fetchPlaylists();
+      const handleFavoritesUpdate = () => fetchFavorites();
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("playlistUpdated", handlePlaylistUpdate);
-    };
-  }, []);
+      window.addEventListener("playlistUpdated", handlePlaylistUpdate);
+      window.addEventListener("favoritesUpdated", handleFavoritesUpdate);
 
-  // 🔘 Khi nhấn vào playlist hoặc liked songs
-  const handleSelect = async (type, playlist = null) => {
-    setActive(type);
-
-    if (type === "liked") {
-      onSelectPlaylist({ name: "Liked Songs", songs: favorites });
-    } else if (type === "playlist" && playlist) {
-      try {
-        const songPromises = (playlist.songIds || []).map((id) =>
-          axios.get(`http://localhost:9000/songs/${id}`).then((res) => res.data)
-        );
-        const songs = await Promise.all(songPromises);
-        onSelectPlaylist({ name: playlist.name, songs });
-      } catch (err) {
-        console.error("Lỗi khi tải bài hát trong playlist:", err);
-      }
+      return () => {
+        window.removeEventListener("playlistUpdated", handlePlaylistUpdate);
+        window.removeEventListener("favoritesUpdated", handleFavoritesUpdate);
+      };
     } else {
-      onSelectPlaylist(null);
+      setFavorites([]);
+      setPlaylists([]);
     }
+  }, [currentUser]);
 
-    setSelectedSong(null);
+  const handleNavigate = (path, type) => {
+    setActive(type);
+    navigate(path);
   };
 
-  // ▶️ Phát tất cả bài hát yêu thích
-  const handlePlayAll = () => {
-    if (favorites.length > 0) {
-      onSelectPlaylist({
-        name: "Liked Songs",
-        songs: favorites,
-        autoPlay: true,
-      });
-      setSelectedSong(null);
+  const handleCreatePlaylist = async () => {
+    if (!currentUser) return;
+
+    const newName = `Playlist của tôi #${playlists.length + 1}`;
+
+    const newPlaylistData = {
+      name: newName,
+      userId: currentUser.id,
+      description: "Mô tả playlist...",
+      coverImg: `https://picsum.photos/seed/playlist${Date.now()}/300`,
+      songIds: [],
+    };
+
+    try {
+      const res = await axios.post(
+        `http://localhost:9000/playlists`,
+        newPlaylistData
+      );
+      const newPlaylist = res.data;
+
+      window.dispatchEvent(new CustomEvent("playlistUpdated"));
+
+      navigate(`/playlist/${newPlaylist.id}`);
+      setActive(newPlaylist.id);
+
+    } catch (err) {
+      console.error("Lỗi khi tạo playlist:", err);
+      alert("Không thể tạo playlist mới. Vui lòng thử lại.");
+    }
+  };
+
+  const handleDeletePlaylist = async (playlistId, playlistName, event) => {
+    event.stopPropagation(); 
+    
+    if (window.confirm(`Bạn có chắc muốn xóa playlist "${playlistName}" không?`)) {
+      try {
+        await axios.delete(`http://localhost:9000/playlists/${playlistId}`);
+        
+        window.dispatchEvent(new CustomEvent("playlistUpdated"));
+        
+        if (active === playlistId) {
+            navigate('/');
+            setActive('all');
+        }
+      } catch (err) {
+        console.error("Lỗi khi xóa playlist:", err);
+        alert("Không thể xóa playlist. Vui lòng thử lại.");
+      }
     }
   };
 
   return (
-    <>
-      {/* Sidebar chính */}
+    <div
+      className="left-sidebar"
+      style={{
+        width: 260,
+        backgroundColor: "#000",
+        color: "#b3b3b3",
+        padding: "20px",
+        height: "100vh",
+        overflowY: "auto",
+        position: "relative",
+        zIndex: 10,
+      }}
+    >
+      <h4 style={{ color: "#fff", fontWeight: "bold", marginBottom: "25px" }}>
+        Thư viện
+      </h4>
+
+      {/* All Songs */}
       <div
-        className="left-sidebar"
+        className={`sidebar-item ${active === "all" ? "active" : ""}`}
+        onClick={() => handleNavigate("/", "all")}
         style={{
-          width: 260,
-          backgroundColor: "#000",
-          color: "#b3b3b3",
-          padding: "20px",
-          height: "100vh",
-          overflowY: "auto",
-          position: "relative",
-          zIndex: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          cursor: "pointer",
+          marginBottom: 15,
+          color: active === "all" ? "#fff" : "#b3b3b3",
         }}
       >
-        <h4 style={{ color: "#fff", fontWeight: "bold", marginBottom: "25px" }}>
-          My Library
-        </h4>
-
-        {/* All Songs */}
-        <div
-          className={`sidebar-item ${active === "all" ? "active" : ""}`}
-          onClick={() => handleSelect("all")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            cursor: "pointer",
-            marginBottom: 15,
-            color: active === "all" ? "#fff" : "#b3b3b3",
-          }}
-        >
-          <FaMusic color={active === "all" ? "#1db954" : "#b3b3b3"} />
-          <span>All Songs</span>
-        </div>
-
-        <hr style={{ borderColor: "#333", margin: "15px 0" }} />
-
-        {/* ✅ Favorites section */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h5 style={{ color: "#fff", marginBottom: 10 }}>Liked Songs</h5>
-          {favorites.length > 0 && (
-            <FaPlay
-              onClick={handlePlayAll}
-              title="Play all favorites"
-              style={{
-                color: "#1db954",
-                cursor: "pointer",
-                fontSize: 14,
-              }}
-            />
-          )}
-        </div>
-
-        {favorites.length === 0 ? (
-          <p style={{ fontSize: 14, color: "#666" }}>Chưa có bài hát yêu thích.</p>
-        ) : (
-          favorites.map((song) => (
-            <div
-              key={song.id}
-              className="sidebar-song"
-              onClick={() => window.dispatchEvent(new CustomEvent("showSongDetail", { detail: song }))}
-
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 10,
-                cursor: "pointer",
-              }}
-            >
-              <img
-                src={`https://picsum.photos/seed/${song.id}/50`}
-                alt={song.title}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 4,
-                  objectFit: "cover",
-                }}
-              />
-              <div>
-                <div style={{ color: "#fff", fontSize: 14 }}>{song.title}</div>
-                <div style={{ color: "#aaa", fontSize: 12 }}>
-                  {song.artist || "Unknown Artist"}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-
-        <hr style={{ borderColor: "#333", margin: "15px 0" }} />
-
-        {/* ✅ Playlist section */}
-        <h5 style={{ color: "#fff", marginBottom: 10 }}>Playlists</h5>
-
-        {playlists.length === 0 ? (
-          <p style={{ fontSize: 14, color: "#666" }}>Chưa có playlist nào.</p>
-        ) : (
-          playlists.map((pl) => (
-            <div
-              key={pl.id}
-              className={`sidebar-item ${active === pl.id ? "active" : ""}`}
-              onClick={() => handleSelect("playlist", pl)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                cursor: "pointer",
-                marginBottom: 12,
-                color: active === pl.id ? "#fff" : "#b3b3b3",
-              }}
-            >
-              <FaListUl color={active === pl.id ? "#1db954" : "#b3b3b3"} />
-              <span>{pl.name}</span>
-            </div>
-          ))
-        )}
+        <FaMusic color={active === "all" ? "#1db954" : "#b3b3b3"} />
+        <span>Tất cả bài hát</span>
       </div>
 
-      {/* ✅ SongDetail hiển thị ở giữa vùng nội dung, không đè lên sidebar */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#000",
-          color: "#fff",
-          overflowY: "auto",
-          height: "100vh",
-        }}
-      >
-        {selectedSong ? (
+      <hr style={{ borderColor: "#333", margin: "15px 0" }} />
+
+      {currentUser && (
+        <>
           <div
             style={{
-              maxWidth: "800px",
-              width: "100%",
-              textAlign: "center",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: 'pointer'
             }}
+            onClick={() => handleNavigate("/liked", "liked")}
           >
-            <SongDetail song={selectedSong} onClose={() => setSelectedSong(null)} />
+            <h5 style={{ color: active === 'liked' ? '#fff' : '#b3b3b3', marginBottom: 10 }}>
+              <FaHeart color={active === 'liked' ? '#1db954' : '#b3b3b3'} style={{ marginRight: 10 }} />
+              Bài hát đã thích
+            </h5>
           </div>
-        ) : (
-          <div style={{ color: "#777" }}>Chọn một bài hát để xem chi tiết 🎧</div>
-        )}
-      </div>
-    </>
+
+          {favorites.length === 0 ? (
+            <p style={{ fontSize: 14, color: "#666" }}>Chưa có bài hát yêu thích.</p>
+          ) : (
+            favorites.slice(0, 5).map((song) => (
+              <div
+                key={song.id}
+                className="sidebar-song"
+                onClick={() => navigate(`/song/${song.id}`)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 10,
+                  cursor: "pointer",
+                  paddingLeft: 10
+                }}
+              >
+                <img
+                  src={`https://picsum.photos/seed/${song.id}/50`}
+                  alt={song.title}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 4,
+                    objectFit: "cover",
+                  }}
+                />
+                <div>
+                  <div style={{ color: "#fff", fontSize: 14, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{song.title}</div>
+                  <div style={{ color: "#aaa", fontSize: 12 }}>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+
+          <hr style={{ borderColor: "#333", margin: "15px 0" }} />
+
+          {/* ✅ Playlist section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h5 style={{ color: "#fff", margin: 0 }}>Playlists</h5>
+            <FaPlus
+              title="Tạo playlist mới"
+              style={{ color: '#b3b3b3', cursor: 'pointer', fontSize: 16 }}
+              onClick={handleCreatePlaylist}
+              className="create-playlist-btn"
+            />
+          </div>
+
+          {playlists.length === 0 ? (
+            <p style={{ fontSize: 14, color: "#666" }}>Chưa có playlist nào.</p>
+          ) : (
+            playlists.map((pl) => (
+              <div
+                key={pl.id}
+                className={`sidebar-item playlist-item-hover ${active === pl.id ? "active" : ""}`}
+                onClick={() => handleNavigate(`/playlist/${pl.id}`, pl.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: 'space-between',
+                  cursor: "pointer",
+                  marginBottom: 12,
+                  color: active === pl.id ? "#fff" : "#b3b3b3",
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                    <FaListUl color={active === pl.id ? "#1db954" : "#b3b3b3"} />
+                    <span style={{textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap'}}>{pl.name}</span>
+                </div>
+                
+                <FaTimes 
+                  className="delete-playlist-btn"
+                  title={`Xóa playlist ${pl.name}`}
+                  onClick={(e) => handleDeletePlaylist(pl.id, pl.name, e)}
+                  style={{
+                    color: '#b3b3b3',
+                    fontSize: 14,
+                    visibility: 'hidden',
+                  }}
+                />
+              </div>
+            ))
+          )}
+        </>
+      )}
+
+      <style>
+        {`
+          .create-playlist-btn:hover {
+            color: #fff !important;
+          }
+            .playlist-item-hover:hover .delete-playlist-btn {
+            visibility: visible !important;
+          }
+          
+          .delete-playlist-btn:hover {
+            color: #fff !important;
+          }
+        `}
+      </style>
+
+    </div>
   );
 }

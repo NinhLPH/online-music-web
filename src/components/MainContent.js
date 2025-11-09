@@ -8,6 +8,7 @@ import Footer from "./Footer";
 function MainContent() {
   const [songs, setSongs] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [albums, setAlbums] = useState([]);
   const [searchResults, setSearchResults] = useState(null); // ✅ thêm state để lưu kết quả tìm kiếm
   const navigate = useNavigate();
 
@@ -25,6 +26,7 @@ function MainContent() {
   useEffect(() => {
     axios.get("http://localhost:9000/songs").then((res) => setSongs(res.data));
     axios.get("http://localhost:9000/artists").then((res) => setArtists(res.data));
+    axios.get("http://localhost:9000/albums").then((res) => setAlbums(res.data));
   }, []);
 
   const getArtistName = (id) =>
@@ -123,6 +125,47 @@ function MainContent() {
             </>
           )}
 
+          {searchResults.albums?.length > 0 && (
+            <>
+              <h5 className="text-light mt-4 mb-2">Album</h5>
+              <div className="row row-cols-5 g-3">
+                {searchResults.albums.map((album) => (
+                  <div
+                    key={album.id}
+                    className="col"
+                    style={{ minWidth: "160px", cursor: "pointer" }}
+                    onClick={() => navigate(`/album/${album.id}`)}
+                  >
+                    <div
+                      className="card border-0 h-100"
+                      style={{
+                        backgroundColor: "#121212",
+                        color: "#fff",
+                      }}
+                    >
+                      <img
+                        src={album.coverImg}
+                        className="card-img-top rounded p-2"
+                        style={{
+                          height: "135px",
+                          width: "100%",
+                          objectFit: "cover",
+                        }}
+                        alt={album.title}
+                      />
+                      <div className="card-body px-2 py-2">
+                        <h6 className="text-truncate mb-1" style={{fontWeight: 'bold'}}>{album.title}</h6>
+                        <p className="small mb-1" style={{color: '#b3b3b3'}}>
+                          {album.releaseYear} • {getArtistName(album.artistId)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Không có kết quả */}
           {(!searchResults.songs?.length && !searchResults.artists?.length) && (
             <p>Không tìm thấy kết quả nào.</p>
@@ -203,6 +246,45 @@ function MainContent() {
                       </p>
                       <p className="text-secondary small mb-0">
                         {formatDuration(song.duration)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="container-fluid pt-4">
+            <h4 className="fw-bold mb-3">Album nổi bật</h4>
+            <div className="row row-cols-5 g-3">
+              {albums.map((album) => (
+                <div
+                  key={album.id}
+                  className="col"
+                  style={{ minWidth: "160px", cursor: "pointer" }}
+                >
+                  <div
+                    className="card border-0 h-100"
+                    style={{
+                      backgroundColor: "#121212",
+                      color: "#fff",
+                    }}
+                    onClick={() => navigate(`/album/${album.id}`)}
+                  >
+                    <img
+                      src={album.coverImg}
+                      className="card-img-top rounded"
+                      style={{
+                        height: "135px",
+                        width: "100%",
+                        objectFit: "cover",
+                      }}
+                      alt={album.title}
+                    />
+                    <div className="card-body px-2 py-2">
+                      <h6 className="text-truncate mb-1" style={{fontWeight: 'bold'}}>{album.title}</h6>
+                      <p className="small mb-1" style={{color: '#b3b3b3'}}>
+                        {album.releaseYear} • {getArtistName(album.artistId)}
                       </p>
                     </div>
                   </div>
