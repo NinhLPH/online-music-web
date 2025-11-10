@@ -15,6 +15,8 @@ export default function LeftSidebar({ onSelectPlaylist }) {
 
   useEffect(() => {
     if (currentUser) {
+      // Lấy dữ liệu từ server qua API.
+
       const fetchFavorites = async () => {
         try {
           const userRes = await axios.get(
@@ -30,6 +32,8 @@ export default function LeftSidebar({ onSelectPlaylist }) {
           console.error("Lỗi tải danh sách yêu thích:", err);
         }
       };
+
+      // Lấy dữ liệu từ server qua API.
 
       const fetchPlaylists = async () => {
         try {
@@ -61,10 +65,14 @@ export default function LeftSidebar({ onSelectPlaylist }) {
     }
   }, [currentUser]);
 
+  //Điều hướng đến trang được chọn.
+
   const handleNavigate = (path, type) => {
     setActive(type);
     navigate(path);
   };
+
+  // Tạo playlist mới cho người dùng.
 
   const handleCreatePlaylist = async () => {
     if (!currentUser) return;
@@ -96,6 +104,8 @@ export default function LeftSidebar({ onSelectPlaylist }) {
       alert("Không thể tạo playlist mới. Vui lòng thử lại.");
     }
   };
+
+  //Xóa playlist đã chọn.
 
   const handleDeletePlaylist = async (playlistId, playlistName, event) => {
     event.stopPropagation(); 
@@ -132,7 +142,7 @@ export default function LeftSidebar({ onSelectPlaylist }) {
       }}
     >
       <h4 style={{ color: "#fff", fontWeight: "bold", marginBottom: "25px" }}>
-        Thư viện
+        Library
       </h4>
 
       {/* All Songs */}
@@ -149,7 +159,7 @@ export default function LeftSidebar({ onSelectPlaylist }) {
         }}
       >
         <FaMusic color={active === "all" ? "#1db954" : "#b3b3b3"} />
-        <span>Tất cả bài hát</span>
+        <span>All Songs</span>
       </div>
 
       <hr style={{ borderColor: "#333", margin: "15px 0" }} />
@@ -167,12 +177,12 @@ export default function LeftSidebar({ onSelectPlaylist }) {
           >
             <h5 style={{ color: active === 'liked' ? '#fff' : '#b3b3b3', marginBottom: 10 }}>
               <FaHeart color={active === 'liked' ? '#1db954' : '#b3b3b3'} style={{ marginRight: 10 }} />
-              Bài hát đã thích
+              Liked Songs
             </h5>
           </div>
 
           {favorites.length === 0 ? (
-            <p style={{ fontSize: 14, color: "#666" }}>Chưa có bài hát yêu thích.</p>
+            <p style={{ fontSize: 14, color: "#666" }}>No favorite songs yet.</p>
           ) : (
             favorites.slice(0, 5).map((song) => (
               <div
@@ -221,7 +231,7 @@ export default function LeftSidebar({ onSelectPlaylist }) {
           </div>
 
           {playlists.length === 0 ? (
-            <p style={{ fontSize: 14, color: "#666" }}>Chưa có playlist nào.</p>
+            <p style={{ fontSize: 14, color: "#666" }}>No playlist.</p>
           ) : (
             playlists.map((pl) => (
               <div
