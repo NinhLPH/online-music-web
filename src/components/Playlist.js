@@ -49,7 +49,7 @@ export default function Playlist({ playlistId }) {
       <p>{playlist.description || "Playlist mới tạo"}</p>
 
       {songs.length === 0 ? (
-        <p style={{ color: "#999" }}>Không có bài hát nào trong playlist này.</p>
+        <p style={{ color: "#999" }}>There are no songs in this playlist.</p>
       ) : (
         songs.map((song) => (
           <div
