@@ -8,6 +8,7 @@ import { Container, Row, Col, Image, ListGroup } from "react-bootstrap";
 import { FaPlay, FaRegClock, FaHeart } from "react-icons/fa";
 import Footer from "./Footer";
 
+//Định dạng thời lượng bài hát theo phút:giây.
 const formatTime = (seconds) => {
   if (isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
@@ -15,6 +16,7 @@ const formatTime = (seconds) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
+//Tính tổng thời lượng toàn bộ danh sách.
 const formatTotalDuration = (songs) => {
   if (!songs || songs.length === 0) return "0 phút";
   const totalSeconds = songs.reduce((acc, song) => acc + (song.duration || 0), 0);
@@ -35,8 +37,10 @@ export default function LikedSongs() {
   const [artists, setArtists] = useState([]);
   const [albums, setAlbums] = useState([]);
 
+  //Lấy tên nghệ sĩ theo artistId.
   const getArtistName = (id) => artists.find(a => a.id == id)?.name || "Unknown Artist";
-  const getAlbumTitle = (id) => albums.find(a => a.id == id)?.title || "Unknown Album";
+ // Lấy tiêu đề album theo albumId.
+ const getAlbumTitle = (id) => albums.find(a => a.id == id)?.title || "Unknown Album";
 
   useEffect(() => {
     if (!currentUser) {
@@ -44,6 +48,7 @@ export default function LikedSongs() {
       return;
     }
 
+//Gọi API để lấy danh sách bài hát, nghệ sĩ, album từ server.
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -77,6 +82,8 @@ export default function LikedSongs() {
 
     fetchData();
     
+    // Khi danh sách yêu thích thay đổi, component cập nhật lại dữ liệu ngay.
+    //Khi click vào từng bài hát hoặc nghệ sĩ/album → chuyển hướng đến trang chi tiết tương ứng.
     const handleFavoritesUpdated = (e) => {
         const updatedIds = e.detail;
         setSongs(currentSongs => currentSongs.filter(s => updatedIds.includes(s.id)));
@@ -92,7 +99,7 @@ export default function LikedSongs() {
   if (loading) {
     return (
       <div className="text-white text-center" style={{ marginTop: "100px" }}>
-        Đang tải...
+        Loading...
       </div>
     );
   }
@@ -100,7 +107,7 @@ export default function LikedSongs() {
   if (!currentUser) {
     return (
         <div className="text-white text-center" style={{ marginTop: "100px" }}>
-            Vui lòng <strong onClick={() => navigate('/login')} style={{cursor: 'pointer', textDecoration: 'underline'}}>đăng nhập</strong> để xem bài hát đã thích.
+            Please <strong onClick={() => navigate('/login')} style={{cursor: 'pointer', textDecoration: 'underline'}}>Login</strong> to see liked songs.
         </div>
     );
   }
@@ -141,12 +148,12 @@ export default function LikedSongs() {
                 className="display-3 fw-bolder mb-3"
                 style={{ lineHeight: 1.1 }}
               >
-                Bài hát đã thích
+                Liked songs
               </h1>
               <div className="d-flex align-items-center justify-content-center justify-content-md-start small text-white-50">
                 <span className="fw-bold text-white">{currentUser.username}</span>
                 <span className="mx-2">•</span>
-                <span>{songs.length} bài hát,</span>
+                <span>{songs.length} Songs,</span>
                 <span className="ms-1 text-white-50">{formatTotalDuration(songs)}</span>
               </div>
             </Col>
@@ -174,7 +181,7 @@ export default function LikedSongs() {
                 <PlayPauseButton song={songs[0]} />
               </div>
           ) : (
-            <p className="px-lg-5">Không có bài hát nào trong danh sách yêu thích của bạn.</p>
+            <p className="px-lg-5">There are no songs in your favorites list..</p>
           )}
         </Container>
 
@@ -183,8 +190,8 @@ export default function LikedSongs() {
           <Container fluid className="px-lg-5 pb-5">
             <Row className="border-bottom border-secondary-subtle py-2 text-white-50 d-none d-md-flex">
               <Col md={1} className="text-center">#</Col>
-              <Col md={4}>Tiêu đề</Col>
-              <Col md={3}>Nghệ sĩ</Col>
+              <Col md={4}>Title</Col>
+              <Col md={3}>Artist</Col>
               <Col md={3}>Album</Col>
               <Col md={1} className="text-end"><FaRegClock /></Col>
             </Row>
