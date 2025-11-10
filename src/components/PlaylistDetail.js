@@ -7,6 +7,7 @@ import { FaPlay, FaRegClock, FaListUl, FaTimes } from "react-icons/fa";
 import PlayPauseButton from "./PlayPauseButton";
 import Footer from "./Footer";
 
+// Định dạng thời lượng bài hát thành phút:giây.
 const formatTime = (seconds) => {
     if (isNaN(seconds)) return "0:00";
     const mins = Math.floor(seconds / 60);
@@ -14,6 +15,7 @@ const formatTime = (seconds) => {
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
+//Tính tổng thời lượng toàn bộ bài hát trong playlist (trả về “x phút y giây”).
 const formatTotalDuration = (songs) => {
     if (!songs || songs.length === 0) return "0 phút";
     const totalSeconds = songs.reduce((acc, song) => acc + (song.duration || 0), 0);
@@ -44,7 +46,9 @@ export default function PlaylistDetail() {
     const [tempDesc, setTempDesc] = useState("");
     const [isOwner, setIsOwner] = useState(false);
 
+    // Lấy tên nghệ sĩ tương ứng từ danh sách artists.
     const getArtistName = (id) => artists.find(a => a.id == id)?.name || "Unknown Artist";
+    // Lấy tên album tương ứng từ danh sách albums.
     const getAlbumTitle = (id) => albums.find(a => a.id == id)?.title || "Unknown Album";
 
     useEffect(() => {
@@ -97,6 +101,9 @@ export default function PlaylistDetail() {
         fetchData();
     }, [id, navigate, currentUser]);
 
+    //Cho phép chủ playlist chỉnh sửa tên hoặc mô tả playlist.
+//Gửi yêu cầu PATCH đến /playlists/:id để cập nhật dữ liệu.
+//Cập nhật lại state và giao diện sau khi lưu thành công.
     const handleSaveDetails = async (field, value) => {
         if (!isOwner) return;
 
@@ -121,6 +128,8 @@ export default function PlaylistDetail() {
         if (field === 'description') setIsEditingDesc(false);
     };
 
+    //Xóa bài hát khỏi playlist bằng cách lọc songIds và gửi yêu cầu PATCH.
+//Cập nhật lại danh sách hiển thị sau khi xóa.
     const handleRemoveSong = async (songId, event) => {
         event.stopPropagation();
         if (!isOwner) return;
